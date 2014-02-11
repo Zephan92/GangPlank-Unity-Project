@@ -8,15 +8,38 @@
 #include <arpa/inet.h>
 #include <signal.h>
 
+#include "hashtable_sync.h"
+
 typedef void handler_t(int);
 handler_t *Signal(int, handler_t*);
 
 void do_server(uint16_t port);
-void *(client_connect)(void*);
+void *client_connect(void*);
 
 void sigterm_handler(int);
 
+int char_count(char*, char);
+int str_split(char*, char, char**);
+
+typedef struct{
+	int client_fd;
+	struct sockaddr_in client_addr;
+	int addrlen;
+} client_args;
+
+typedef struct{
+	char *name;
+	char ip[INET_ADDRSTRLEN];
+} user_t;
+
+void add_user(int, char**, char*, client_args*);
+void get_user(int, char**, char*, client_args*);
+void rm_user(int, char**, char*, client_args*);
+
 int server_fd;
+
+hashtable_t command_table;
+hashtable_sync_t user_table;
 
 int main(int argc, char *argv[]){
 	uint16_t port = 5555;
@@ -26,16 +49,20 @@ int main(int argc, char *argv[]){
 
 	Signal(SIGTERM, sigterm_handler);
 
+	ht_init(&command_table);
+	ht_add(&command_table, "add", add_user);
+	ht_add(&command_table, "get", get_user);
+	ht_add(&command_table, "rm", rm_user);
+
+	ht_sync_init(&user_table);
+
 	do_server(port);
+
+	ht_dispose(&command_table);
+	ht_sync_dispose(&user_table);
 
 	return 0;
 }
-
-typedef struct{
-	int client_fd;
-	struct sockaddr_in client_addr;
-	int addrlen;
-} client_args;
 
 void do_server(uint16_t port){
 	int client_fd, sin_size;
@@ -58,7 +85,6 @@ void do_server(uint16_t port){
 		close(server_fd);
 		return;
 	}
-
 	if(listen(server_fd, 10) < 0){
 		printf("failed to listen on server socket. exiting\n");
 		close(server_fd);
@@ -69,7 +95,6 @@ void do_server(uint16_t port){
 	pthread_attr_init(&thread_attr);
 	pthread_attr_setdetachstate(&thread_attr, PTHREAD_CREATE_DETACHED);
 	pthread_t thread;
-	int flag = 1;
 	while(1){
 		sin_size = sizeof(struct sockaddr_in);
 		if((client_fd = accept(server_fd, (struct sockaddr*)&client_addr, &sin_size)) < 0){
@@ -83,36 +108,124 @@ void do_server(uint16_t port){
 		args->addrlen = sin_size;
 		pthread_create(&thread, &thread_attr, client_connect, args);
 	}
+
 }
 
-void *(client_connect)(void *c_arg){
+#define BUF_SIZE 128
+void *client_connect(void *c_arg){
 	client_args *args = (client_args*)c_arg;
-	char client_host[128];
 	printf("client '%s' connected\n",inet_ntoa(args->client_addr.sin_addr));
 
-	char buf[128];
-	char sendbuf[128] = "sending\nsome\nmessages\n";
+	char recbuf[BUF_SIZE], sendbuf[BUF_SIZE];
 	int rec_size;
-	if((rec_size = recv(args->client_fd, buf, 128, 0)) < 0){
+	if((rec_size = recv(args->client_fd, recbuf, BUF_SIZE, 0)) < 0){
 		printf("error in reading from client\n");
 	}
 	else{
 		while(rec_size){
-			printf("received '%s'\n",buf);
-			printf("sending '%s'\n",sendbuf);
+			int argc = char_count(recbuf, ';') + 1;
+			char **argv = malloc(sizeof(char*) * argc);
+			str_split(recbuf, ';', argv);
+
+			void (*command)(int, char**, char*, client_args*) = ht_get(&command_table, argv[0]);
+			if(command){
+				command(argc, argv, sendbuf, args);
+			}
+			else{
+				snprintf(sendbuf, BUF_SIZE, "err;unknown command '%s'\n", argv[0]);
+			}
 
 			send(args->client_fd, sendbuf, strlen(sendbuf), 0);
+			free(argv);
 
-			printf("sent '%s'\n",sendbuf);
-			if((rec_size = recv(args->client_fd, buf, 128, 0)) < 0){
+			if((rec_size = recv(args->client_fd, recbuf, BUF_SIZE, 0)) < 0){
 				break;
 			}
 		}
 	}
 
-	printf("client finished\n");
+	printf("client '%s' disconnected\n", inet_ntoa(args->client_addr.sin_addr));
 	free(args);
 	return NULL;
+}
+
+inline void send_too_few_args(char* sendbuf, const char *cmd){
+	snprintf(sendbuf, BUF_SIZE, "err;too few args for '%s'\n", cmd);	
+}
+
+void add_user(int argc, char **argv, char *sendbuf, client_args *c_args){
+	if(argc < 2){
+		send_too_few_args(sendbuf, argv[0]);
+		return;
+	}
+	if(ht_sync_get(&user_table, argv[1])){
+		snprintf(sendbuf, BUF_SIZE, "fail;username taken\n");
+		return;
+	}
+
+	user_t *newuser = malloc(sizeof(user_t));
+	newuser->name = malloc(sizeof(char) * strlen(argv[1]));
+
+	strcpy(newuser->name, argv[1]);
+	inet_ntop(AF_INET, &c_args->client_addr.sin_addr, newuser->ip, INET_ADDRSTRLEN);
+
+	ht_sync_add(&user_table, newuser->name, newuser);
+	snprintf(sendbuf, BUF_SIZE, "ok;added user '%s' %s\n", newuser->name, newuser->ip);
+}
+
+void get_user(int argc, char **argv, char *sendbuf, client_args *c_args){
+	if(argc < 2){
+		send_too_few_args(sendbuf, argv[0]);
+		return;
+	}
+	user_t *user;
+	if(user = ht_sync_get(&user_table, argv[1])){
+		snprintf(sendbuf, BUF_SIZE, "ok;user '%s' %s\n", user->name, user->ip);
+	}
+	else{
+		snprintf(sendbuf, BUF_SIZE, "fail;user not found\n");
+	}
+}
+void rm_user(int argc, char **argv, char *sendbuf, client_args *c_args){
+	if(argc < 2){
+		send_too_few_args(sendbuf, argv[0]);
+		return;
+	}
+	user_t *user;
+	if(user = ht_sync_get(&user_table, argv[1])){
+		ht_sync_delete(&user_table, argv[1]);
+		snprintf(sendbuf, BUF_SIZE, "ok;removed '%s'\n", user->name);
+		free(user->name);
+		free(user);
+	}
+	else{
+		snprintf(sendbuf, BUF_SIZE, "fail;user not found\n");
+	}
+	
+}
+
+
+int char_count(char* str, char c){
+	int ret = 0;
+	while(*str){
+		if(*str++ == c) ret++;
+	}
+	return ret;
+}
+
+int str_split(char* str, char c, char **arr){
+	size_t i = 1;
+	arr[0] = str;
+	while(*str){
+		if(*str == c){
+			*str = '\0';
+			arr[i++] = ++str;
+		}
+		else{
+			str++;
+		}
+	}
+	return i;
 }
 
 void sigterm_handler(int sig){

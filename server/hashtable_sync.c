@@ -1,12 +1,13 @@
 #include "hashtable_sync.h"
 
 void ht_sync_init_s(hashtable_sync_t *table, size_t capacity){
-	table->t = ht_init_s(capacity);
+	table->t = malloc(sizeof(hashtable_t));
+	ht_init_s(table->t, capacity);
 	sem_init(&table->mutex, 0, 1);
 }
 
-void ht_sync_init(hashtable_sync_t *t){
-	ht_sync_init_s(t,16);
+void ht_sync_init(hashtable_sync_t *table){
+	ht_sync_init_s(table,16);
 }
 
 void *do_locked(hashtable_sync_t* table, const char* key, void *(*do_op)(hashtable_t*,const char*)){
@@ -35,5 +36,6 @@ void *ht_sync_add(hashtable_sync_t* table, const char* key, void *val){
 
 void ht_sync_dispose(hashtable_sync_t *table){
 	ht_dispose(table->t);
+	free(table->t);
 	sem_destroy(&table->mutex);
 }

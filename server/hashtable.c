@@ -1,24 +1,21 @@
 #include "hashtable.h"
 
-uint32_t hash_code(const char* key);
-node_t *ht_get_node(hashtable_t*,const char*);
-node_t *ht_get_node_i(hashtable_t*,const char*,uint32_t);
-void ht_rehash(hashtable_t*, size_t);
+static uint32_t hash_code(const char* key);
+static node_t *ht_get_node(hashtable_t*,const char*);
+static node_t *ht_get_node_i(hashtable_t*,const char*,uint32_t);
+static void ht_rehash(hashtable_t*, size_t);
 
-hashtable_t *ht_init_s(size_t capacity){
+void ht_init_s(hashtable_t *t, size_t capacity){
 	uint32_t cap = 1 << (31 - __builtin_clz(capacity));
 	if(capacity > cap) cap <<= 1;
 
-	hashtable_t *t = (hashtable_t*)malloc(sizeof(hashtable_t));
 	t->cap = cap;
 	t->arr = (node_t**)calloc(t->cap, sizeof(node_t*));
 	t->size = 0;
-
-	return t;
 }
 
-hashtable_t *ht_init(){
-	return ht_init_s(16);
+void ht_init(hashtable_t *t){
+	ht_init_s(t, 16);
 }
 
 void *ht_add(hashtable_t *t, const char* key, void *val){
@@ -81,7 +78,7 @@ void *ht_delete(hashtable_t *t, const char*key){
 			t->size--;
 		}
 	}
-	if(t->size <= t->cap >> 2){
+	if(t->size <= t->cap >> 2 && t->cap > 16){
 		ht_rehash(t, t->cap >> 1);
 	}
 	return ret;
@@ -109,6 +106,28 @@ void ht_rehash(hashtable_t *t, size_t newcap){
 	t->cap = newcap;
 }
 
+void subdispose(node_t *n){
+	if(n->next){
+		subdispose(n->next);
+	}
+	free(n);
+}
+
+void ht_dispose(hashtable_t *t){
+	node_t *n;
+	uint32_t i;
+	for(i = 0; i < t->cap; i++){
+		n = t->arr[i];
+		if(n){
+			subdispose(n);
+		}
+	}
+	free(t->arr);
+}
+
+#define FNV_PRIME 16777619
+#define FNV_BASE 2166136261
+
 uint32_t hash_code(const char* key){
 	uint32_t i, hc = FNV_BASE;
 	for(i = 0; key[i]; i++){
@@ -117,7 +136,6 @@ uint32_t hash_code(const char* key){
 	}
 	return hc;
 }
-
 
 /*
 void ht_print(hashtable_t *t){
@@ -128,7 +146,7 @@ void ht_print(hashtable_t *t){
 		n = t->arr[i];
 		while(1){
 			if(n){
-				printf("k:'%s' v:%i -> ",n->key,*(int*)n->val);
+				printf("k:'%s' v:%p -> ",n->key,n->val);
 				n = n->next;
 			}
 			else{
@@ -139,19 +157,4 @@ void ht_print(hashtable_t *t){
 	}
 	printf("\n");
 }
-
-int main(int argc, char *argv[]){
-	struct timespec t1, t2;
-	clock_gettime(CLOCK_MONOTONIC,&t1);
-
-	int i;
-	for(i = 1e8; i; i--){
-		ht_add(table,key1,&val1);
-	}
-
-	clock_gettime(CLOCK_MONOTONIC,&t2);
-	double sec = t2.tv_sec-t1.tv_sec+(t2.tv_nsec-t1.tv_nsec)/1e9;
-	printf("sec:%f\n",sec);
-}
-*/
-
+//*/
