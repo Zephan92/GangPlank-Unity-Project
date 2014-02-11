@@ -6,7 +6,7 @@ static node_t *ht_get_node_i(hashtable_t*,const char*,uint32_t);
 static void ht_rehash(hashtable_t*, size_t);
 
 void ht_init_s(hashtable_t *t, size_t capacity){
-	uint32_t cap = 1 << (__builtin_ffs(capacity) - 1);
+	uint32_t cap = 1 << (31 - __builtin_clz(capacity));
 	if(capacity > cap) cap <<= 1;
 
 	t->cap = cap;
