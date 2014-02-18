@@ -55,8 +55,8 @@ int main(int argc, char *argv[]){
 	ht_add(&command_table, "add", add_user);
 	ht_add(&command_table, "get", get_user);
 	ht_add(&command_table, "rm", rm_user);
-	ht_add(&command_table, "count", rm_user);
-	ht_add(&command_table, "list", rm_user);
+	ht_add(&command_table, "count", count_users);
+	ht_add(&command_table, "list", list_users);
 
 	ht_sync_init(&user_table);
 
