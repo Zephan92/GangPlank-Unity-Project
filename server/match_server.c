@@ -236,6 +236,7 @@ void list_users(int argc, char **argv, char *sendbuf, client_args *c_args){
 		else{
 			snprintf(sendbuf, BUF_SIZE, "fail;over user count\n");
 		}
+		free(kvps);
 	}
 	else{
 		snprintf(sendbuf, BUF_SIZE, "fail;no users\n");
