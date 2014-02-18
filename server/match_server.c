@@ -209,7 +209,7 @@ void rm_user(int argc, char **argv, char *sendbuf, client_args *c_args){
 }
 
 void count_users(int argc, char **argv, char *sendbuf, client_args *c_args){
-	snprintf(sendbuf, BUF_SIZE, "ok;%lu\n", user_table.size);
+	snprintf(sendbuf, BUF_SIZE, "ok;%lu\n", user_table.t->size);
 }
 
 void list_users(int argc, char **argv, char *sendbuf, client_args *c_args){
@@ -219,8 +219,8 @@ void list_users(int argc, char **argv, char *sendbuf, client_args *c_args){
 	}
 	int num = atoi(argv[1]), i;
 	if(num > 0){
-		kvp_t *kvps = malloc(sizeof(kvp_t)*user_table.size);
-		get_all_kvps(&user_table,kvps);
+		kvp_t *kvps = malloc(sizeof(kvp_t)*user_table.t->size);
+		get_all_kvps(user_table.t,kvps);
 		for(i = 0; i < num-1; i++){
 			snprintf(sendbuf, BUF_SIZE, "ok;%s\n", (char*)(kvps[i].key));
 			send(c_args->client_fd, sendbuf, strlen(sendbuf), 0);
