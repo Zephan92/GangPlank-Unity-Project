@@ -222,10 +222,20 @@ void list_users(int argc, char **argv, char *sendbuf, client_args *c_args){
 		kvp_t *kvps = malloc(sizeof(kvp_t)*user_table.t->size);
 		get_all_kvps(user_table.t,kvps);
 		for(i = 0; i < num-1; i++){
-			snprintf(sendbuf, BUF_SIZE, "ok;%s\n", (char*)(kvps[i].key));
+			if(i < user_table.t->size){
+				snprintf(sendbuf, BUF_SIZE, "ok;%s\n", (char*)(kvps[i].key));
+			}
+			else{
+				snprintf(sendbuf, BUF_SIZE, "fail;over user count\n");
+			}
 			send(c_args->client_fd, sendbuf, strlen(sendbuf), 0);
 		}
-		snprintf(sendbuf, BUF_SIZE, "ok;%s\n", (char*)(kvps[num-1].key));
+		if(num-1 < user.table.t->size){
+			snprintf(sendbuf, BUF_SIZE, "ok;%s\n", (char*)(kvps[num-1].key));
+		}
+		else{
+			snprintf(sendbuf, BUF_SIZE, "fail;over user count\n");
+		}
 	}
 	else{
 		snprintf(sendbuf, BUF_SIZE, "fail;no users\n");
