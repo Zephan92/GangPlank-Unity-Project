@@ -230,7 +230,7 @@ void list_users(int argc, char **argv, char *sendbuf, client_args *c_args){
 			}
 			send(c_args->client_fd, sendbuf, strlen(sendbuf), 0);
 		}
-		if(num-1 < user.table.t->size){
+		if(num-1 < user_table.t->size){
 			snprintf(sendbuf, BUF_SIZE, "ok;%s\n", (char*)(kvps[num-1].key));
 		}
 		else{
