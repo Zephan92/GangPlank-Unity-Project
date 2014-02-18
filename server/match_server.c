@@ -35,6 +35,8 @@ typedef struct{
 void add_user(int, char**, char*, client_args*);
 void get_user(int, char**, char*, client_args*);
 void rm_user(int, char**, char*, client_args*);
+void count_users(int, char**, char*, client_args*);
+void list_users(int, char**, char*, client_args*);
 
 int server_fd;
 
@@ -53,6 +55,8 @@ int main(int argc, char *argv[]){
 	ht_add(&command_table, "add", add_user);
 	ht_add(&command_table, "get", get_user);
 	ht_add(&command_table, "rm", rm_user);
+	ht_add(&command_table, "count", rm_user);
+	ht_add(&command_table, "list", rm_user);
 
 	ht_sync_init(&user_table);
 
@@ -202,6 +206,30 @@ void rm_user(int argc, char **argv, char *sendbuf, client_args *c_args){
 		snprintf(sendbuf, BUF_SIZE, "fail;user not found\n");
 	}
 	
+}
+
+void count_users(int argc, char **argv, char *sendbuf, client_args *c_args){
+	snprintf(sendbuf, BUF_SIZE, "ok;%lu\n", user_table.size);
+}
+
+void list_users(int argc, char **argv, char *sendbuf, client_args *c_args){
+	if(argc < 2){
+		send_too_few_args(sendbuf, argv[0]);
+		return;
+	}
+	int num = atoi(argv[1]), i;
+	if(num > 0){
+		kvp_t *kvps = malloc(sizeof(kvp_t)*user_table.size);
+		get_all_kvps(&user_table,kvps);
+		for(i = 0; i < num-1; i++){
+			snprintf(sendbuf, BUF_SIZE, "ok;%s\n", (char*)(kvps[i].key));
+			send(c_args->client_fd, sendbuf, strlen(sendbuf), 0);
+		}
+		snprintf(sendbuf, BUF_SIZE, "ok;%s\n", (char*)(kvps[num-1].key));
+	}
+	else{
+		snprintf(sendbuf, BUF_SIZE, "fail;no users\n");
+	}
 }
 
 int char_count(char* str, char c){
