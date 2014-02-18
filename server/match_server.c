@@ -204,7 +204,6 @@ void rm_user(int argc, char **argv, char *sendbuf, client_args *c_args){
 	
 }
 
-
 int char_count(char* str, char c){
 	int ret = 0;
 	while(*str){
@@ -230,6 +229,7 @@ int str_split(char* str, char c, char **arr){
 
 void sigterm_handler(int sig){
 	close(server_fd);
+	exit(0);
 }
 
 handler_t *Signal(int sig, handler_t *handler){
