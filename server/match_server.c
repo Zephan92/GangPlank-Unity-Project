@@ -127,19 +127,20 @@ void *client_connect(void *c_arg){
 	}
 	else{
 		while(rec_size){
-			int argc = char_count(recbuf, ';') + 1;
+			int argc = char_count(recbuf, '\x1F') + 1;
 			char **argv = malloc(sizeof(char*) * argc);
-			str_split(recbuf, ';', argv);
+			str_split(recbuf, '\x1F', argv);
 
 			void (*command)(int, char**, char*, client_args*) = ht_get(&command_table, argv[0]);
 			if(command){
 				command(argc, argv, sendbuf, args);
 			}
 			else{
-				snprintf(sendbuf, BUF_SIZE, "err;unknown command '%s'\x17", argv[0]);
+				snprintf(sendbuf, BUF_SIZE, "err\x1F""unknown command '%s'\x17", argv[0]);
 			}
 
 			send(args->client_fd, sendbuf, strlen(sendbuf), 0);
+			//printf("sending {%s}\n", sendbuf);
 			free(argv);
 
 			if((rec_size = recv(args->client_fd, recbuf, BUF_SIZE, 0)) < 0){
@@ -154,7 +155,7 @@ void *client_connect(void *c_arg){
 }
 
 inline void send_too_few_args(char* sendbuf, const char *cmd){
-	snprintf(sendbuf, BUF_SIZE, "err;too few args for '%s'\x17", cmd);	
+	snprintf(sendbuf, BUF_SIZE, "err\x1F""too few args for '%s'\x17", cmd);	
 }
 
 void add_user(int argc, char **argv, char *sendbuf, client_args *c_args){
@@ -163,7 +164,7 @@ void add_user(int argc, char **argv, char *sendbuf, client_args *c_args){
 		return;
 	}
 	if(ht_sync_get(&user_table, argv[1])){
-		snprintf(sendbuf, BUF_SIZE, "fail;username taken\x17");
+		snprintf(sendbuf, BUF_SIZE, "fail\x1F""username taken\x17");
 		return;
 	}
 
@@ -174,7 +175,7 @@ void add_user(int argc, char **argv, char *sendbuf, client_args *c_args){
 	inet_ntop(AF_INET, &c_args->client_addr.sin_addr, newuser->ip, INET_ADDRSTRLEN);
 
 	ht_sync_add(&user_table, newuser->name, newuser);
-	snprintf(sendbuf, BUF_SIZE, "ok;added user '%s' %s\x17", newuser->name, newuser->ip);
+	snprintf(sendbuf, BUF_SIZE, "ok\x1F""added user '%s' %s\x17", newuser->name, newuser->ip);
 }
 
 void get_user(int argc, char **argv, char *sendbuf, client_args *c_args){
@@ -184,10 +185,10 @@ void get_user(int argc, char **argv, char *sendbuf, client_args *c_args){
 	}
 	user_t *user;
 	if(user = ht_sync_get(&user_table, argv[1])){
-		snprintf(sendbuf, BUF_SIZE, "ok;user '%s' %s\x17", user->name, user->ip);
+		snprintf(sendbuf, BUF_SIZE, "ok\x1F""user '%s' %s\x17", user->name, user->ip);
 	}
 	else{
-		snprintf(sendbuf, BUF_SIZE, "fail;user not found\x17");
+		snprintf(sendbuf, BUF_SIZE, "fail\x1F""user not found\x17");
 	}
 }
 void rm_user(int argc, char **argv, char *sendbuf, client_args *c_args){
@@ -198,18 +199,18 @@ void rm_user(int argc, char **argv, char *sendbuf, client_args *c_args){
 	user_t *user;
 	if(user = ht_sync_get(&user_table, argv[1])){
 		ht_sync_delete(&user_table, argv[1]);
-		snprintf(sendbuf, BUF_SIZE, "ok;removed '%s'\x17", user->name);
+		snprintf(sendbuf, BUF_SIZE, "ok\x1F""removed '%s'\x17", user->name);
 		free(user->name);
 		free(user);
 	}
 	else{
-		snprintf(sendbuf, BUF_SIZE, "fail;user not found\x17");
+		snprintf(sendbuf, BUF_SIZE, "fail\x1F""user not found\x17");
 	}
 	
 }
 
 void count_users(int argc, char **argv, char *sendbuf, client_args *c_args){
-	snprintf(sendbuf, BUF_SIZE, "ok;%lu\x17", user_table.t->size);
+	snprintf(sendbuf, BUF_SIZE, "ok\x1F""%lu\x17", user_table.t->size);
 }
 
 void list_users(int argc, char **argv, char *sendbuf, client_args *c_args){
@@ -217,29 +218,37 @@ void list_users(int argc, char **argv, char *sendbuf, client_args *c_args){
 		send_too_few_args(sendbuf, argv[0]);
 		return;
 	}
-	int num = atoi(argv[1]), i;
+	//int num = atoi(argv[1]), i;
+	size_t num, i;
+	if(strcmp(argv[1], "all") == 0){
+		num = user_table.t->size;
+	}
+	else{
+		num = atoi(argv[1]);
+	}
 	if(num > 0){
 		kvp_t *kvps = malloc(sizeof(kvp_t)*user_table.t->size);
 		get_all_kvps(user_table.t,kvps);
 		for(i = 0; i < num-1; i++){
 			if(i < user_table.t->size){
-				snprintf(sendbuf, BUF_SIZE, "ok;%s\x1F", (char*)(kvps[i].key));
+				snprintf(sendbuf, BUF_SIZE, "ok\x1F""%s\x1E", (char*)(kvps[i].key));
 			}
 			else{
-				snprintf(sendbuf, BUF_SIZE, "fail;over user count\x1F");
+				snprintf(sendbuf, BUF_SIZE, "fail\x1F""over user count\x1E");
 			}
 			send(c_args->client_fd, sendbuf, strlen(sendbuf), 0);
+			//printf("sending {%s}\n", sendbuf);
 		}
 		if(num-1 < user_table.t->size){
-			snprintf(sendbuf, BUF_SIZE, "ok;%s\x17", (char*)(kvps[num-1].key));
+			snprintf(sendbuf, BUF_SIZE, "ok\x1F""%s\x17", (char*)(kvps[num-1].key));
 		}
 		else{
-			snprintf(sendbuf, BUF_SIZE, "fail;over user count\x17");
+			snprintf(sendbuf, BUF_SIZE, "fail\x1F""over user count\x17");
 		}
 		free(kvps);
 	}
 	else{
-		snprintf(sendbuf, BUF_SIZE, "fail;no users\x17");
+		snprintf(sendbuf, BUF_SIZE, "fail\x1F""no users\x17");
 	}
 }
 

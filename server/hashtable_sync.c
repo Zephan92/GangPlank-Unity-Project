@@ -10,7 +10,7 @@ void ht_sync_init(hashtable_sync_t *table){
 	ht_sync_init_s(table,16);
 }
 
-void *do_locked(hashtable_sync_t* table, const char* key, void *(*do_op)(hashtable_t*,const char*)){
+void *do_locked(hashtable_sync_t* table, const void* key, void *(*do_op)(hashtable_t*,const void*)){
 	void *ret;
 	sem_wait(&table->mutex);
 	ret = do_op(table->t, key);
@@ -18,15 +18,15 @@ void *do_locked(hashtable_sync_t* table, const char* key, void *(*do_op)(hashtab
 	return ret;
 }
 
-void *ht_sync_get(hashtable_sync_t *table, const char *key){
+void *ht_sync_get(hashtable_sync_t *table, const void *key){
 	return do_locked(table, key, ht_get);
 }
 
-void *ht_sync_delete(hashtable_sync_t *table, const char *key){
+void *ht_sync_delete(hashtable_sync_t *table, const void *key){
 	return do_locked(table, key, ht_delete);
 }
 
-void *ht_sync_add(hashtable_sync_t* table, const char* key, void *val){
+void *ht_sync_add(hashtable_sync_t* table, const void* key, void *val){
 	void *ret;
 	sem_wait(&table->mutex);
 	ret = ht_add(table->t, key, val);
