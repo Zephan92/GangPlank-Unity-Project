@@ -127,6 +127,8 @@ void *client_connect(void *c_arg){
 	}
 	else{
 		while(rec_size){
+			if(recbuf[rec_size-1] == '\x17') recbuf[rec_size-1] = '\0';
+			//printf("rec:{%s}\n",recbuf);
 			int argc = char_count(recbuf, '\x1F') + 1;
 			char **argv = malloc(sizeof(char*) * argc);
 			str_split(recbuf, '\x1F', argv);
