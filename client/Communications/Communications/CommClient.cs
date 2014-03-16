@@ -31,6 +31,9 @@ namespace Gangplank.Communications
             socket.Close();
         }
 
+        public void send(string msg) {
+            socket.Send(Encoding.ASCII.GetBytes(msg));
+        }
         public string sendAndRead(string msg) {
             send(msg);
             StringBuilder sb = new StringBuilder();
@@ -42,9 +45,6 @@ namespace Gangplank.Communications
             } while (rec[read - 1] != CommConstants.endTransmission);
 
             return sb.ToString();
-        }
-        public void send(string msg) {
-            socket.Send(Encoding.ASCII.GetBytes(msg));
         }
     }
 }
