@@ -20,7 +20,7 @@ public class test{
 		// \x1E ^_ split multi message before \x17
 		char[] buff = new char[1024];
 		while(scan.hasNext()){
-			String s = scan.nextLine().replace("\n","")+"\0";
+			String s = scan.nextLine().replace("\n","")+(char)0x17;
 			out.print(s);
 			out.flush();
 
