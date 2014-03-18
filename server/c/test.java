@@ -24,13 +24,14 @@ public class test{
 			out.print(s);
 			out.flush();
 
+			/*
 			String b = "";
 			do{
 				int read = in.read(buff, 0, 1024);
 				String q = new String(buff, 0, read);
 				b += q;
 			}while(b.charAt(b.length()-1) != (char)0x17);
-			System.out.println("{"+b+"}");
+			System.out.println("{"+b+"}");*/
 		}
 
 		socket.close();
