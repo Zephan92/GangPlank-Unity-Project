@@ -28,6 +28,9 @@ public class MatchServer{
 		messageHandlers = new HashMap<String, MessageHandler>();
 		messageHandlers.put("host", this::addHost);
 		messageHandlers.put("list_hosts", this::listHosts);
+		messageHandlers.put("join", this::joinGroup);
+		messageHandlers.put("list_group", this::listGroup);
+		messageHandlers.put("group", this::sendToGroup);
 	}
 
 	public void stop(){
@@ -88,6 +91,15 @@ public class MatchServer{
 	}
 
 	private ConcurrentHashMap<String, User> hosts = new ConcurrentHashMap<String, User>();
+	private ConcurrentHashMap<User, Group> users = new ConcurrentHashMap<User, Group>();
+
+	private static final String FAIL_NAME_TAKEN = composeMessage("fail","user name taken"),
+	                            FAIL_NO_HOSTS = composeMessage("fail","no hosts"),
+	                            FAIL_HOST_NOT_FOUND = composeMessage("fail","host not found"),
+										 FAIL_NOT_IN_GROUP = composeMessage("fail","not in a group"),
+										 OK_JOINED_GROUP = composeMessage("ok","joined group"),
+										 ERR_NAME_MISMATCH = composeMessage("err","name mismatch detected");
+
 	private void addHost(User user, String msg){
 		String[] split = msg.split(UNIT_SPLIT_STR);
 		if(split.length < 2){
@@ -96,11 +108,18 @@ public class MatchServer{
 		}
 
 		if(hosts.containsKey(split[1])){
-			user.send(composeMessage("fail","username taken"));
+			user.send(FAIL_NAME_TAKEN);
 		}
 		else{
-			if(user.getName().equals(User.DEFAULT_NAME)) user.setName(split[1]);
+			if(user.getName().equals(User.DEFAULT_NAME)){
+				user.setName(split[1]);
+			}
+			else if(!user.getName().equals(split[1])){
+				user.send(ERR_NAME_MISMATCH);
+				return;
+			}
 			hosts.put(split[1], user);
+			users.put(user, new Group(user));
 			user.send(composeMessage("ok","added user '"+split[1]+"'"));
 		}
 	}
@@ -109,25 +128,78 @@ public class MatchServer{
 		String[] split = msg.split(UNIT_SPLIT_STR);
 		int num = split.length < 2 || split[1].equals("all") ? hosts.size() : Math.min(hosts.size(), Integer.parseInt(split[1]));
 		if(num == 0){
-			user.send(composeMessage("fail","no hosts"));
+			user.send(FAIL_NO_HOSTS);
 		}
 		else{
-			user.send(composeMessage(Stream.concat(Stream.of("ok"),hosts.keySet().stream().limit(num)).toArray(String[]::new)));
+			user.send(composeMessage("ok",hosts.keySet().stream().limit(num).toArray(String[]::new)));
 		}
 	}
 
-	private String tooFewArgs(String cmd){
+	private void joinGroup(User user, String msg){
+		String[] split = msg.split(UNIT_SPLIT_STR);
+		if(split.length < 3){
+			user.send(tooFewArgs(split[0]));
+			return;
+		}
+
+		User host = hosts.get(split[1]);
+		if(host == null){
+			user.send(FAIL_HOST_NOT_FOUND);
+			return;
+		}
+		
+		Group group = users.get(host);
+		if(group.members.containsKey(split[2])){
+			user.send(FAIL_NAME_TAKEN);
+			return;
+		}
+
+		if(user.getName().equals(User.DEFAULT_NAME)){
+			user.setName(split[2]);
+		}
+		else if(!user.getName().equals(split[2])){
+			user.send(ERR_NAME_MISMATCH);
+			return;
+		}
+		group.add(user);
+		users.put(user, group);
+		user.send(OK_JOINED_GROUP);
+	}
+
+	private void listGroup(User user, String msg){
+		Group group = users.get(user);
+		if(group == null){
+			user.send(FAIL_NOT_IN_GROUP);
+			return;
+		}
+		
+		user.send(composeMessage("ok", group.members.keySet().stream().toArray(String[]::new)));
+	}
+
+	private void sendToGroup(User user, String msg){
+		Group group = users.get(user);
+		if(group == null){
+			user.send(FAIL_NOT_IN_GROUP);
+		}
+
+		group.send(composeMessage("hook",msg.substring(msg.indexOf(UNIT_SPLIT)+1)));
+	}
+
+	private static String tooFewArgs(String cmd){
 		return composeMessage("err","too few args for '"+cmd+"'");
 	}
 
-	private String composeUnits(String... units){
+	private static String composeUnits(String... units){
 		return Arrays.stream(units).collect(Collectors.joining(UNIT_SPLIT_STR));
 	}
-	private String composeMessageMulti(String... records){
+	private static String composeMessageMulti(String... records){
 		return Arrays.stream(records).collect(Collectors.joining(RECORD_SPLIT_STR))+END_TRANSMISSION;
 	}
-	private String composeMessage(String... units){
+	private static String composeMessage(String... units){
 		return composeMessageMulti(composeUnits(units));
+	}
+	private static String composeMessage(String cmd, String[] args){
+		return composeMessageMulti(composeUnits(cmd, composeUnits(args)));
 	}
 
 	private void disconnectUser(User user){
@@ -157,13 +229,17 @@ public class MatchServer{
 				}
 			})).get();
 
-			setName(DEFAULT_NAME);
+			setName(DEFAULT_NAME, false);
 		}
 
 		public String getName(){return name;}
 		public void setName(String n){
+			setName(n, true);
+		}
+		private void setName(String n, boolean announce){
 			name = n;
 			tostr = name+"@"+address;
+			if(announce) out.println("Id set:"+this);
 		}
 
 		public char consumeBuffer(){
@@ -183,21 +259,41 @@ public class MatchServer{
 		}
 
 		public void send(String msg){
-			channel.write(ByteBuffer.wrap(msg.getBytes(ASCII)));
-			/*
+			//channel.write(ByteBuffer.wrap(msg.getBytes(ASCII)));
+			//*
 			channel.write(ByteBuffer.wrap(msg.getBytes(ASCII)), msg, new CompletionHandler<Integer, String>(){
 				public void completed(Integer i, String s){
-					out.println("sent{"+s+"}");
+					out.println("sent to "+getName()+"{"+s+"}");
 				}
 				public void failed(Throwable exc, String s){
 					out.println("failed to send{"+s+"} because "+exc);
 				}
 			});
-			*/
+			//*/
 		}
 
 		public String toString(){
 			return tostr;
+		}
+
+		public int hashCode(){
+			return tostr.hashCode();
+		}
+	}
+
+	private class Group{
+		public final ConcurrentHashMap<String, User> members = new ConcurrentHashMap<String, User>();
+		public Group(User... users){
+			for(User u:users){
+				add(u);
+			}
+		}
+		public void add(User u){
+			members.put(u.getName(), u);
+		}
+
+		public void send(String msg){
+			members.values().stream().forEach(user -> user.send(msg));
 		}
 	}
 
