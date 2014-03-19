@@ -39,7 +39,7 @@ namespace Gangplank.Communications
 					builder.Append(Encoding.ASCII.GetString(buffer, 0, read));
 
 					if(buffer[read-1] == CommConstants.endTransmission){
-						processMessage(builder.ToString());
+						processMessage(builder.ToString().TrimEnd(CommConstants.endTransmission));
 						builder = new StringBuilder();
 					}
 

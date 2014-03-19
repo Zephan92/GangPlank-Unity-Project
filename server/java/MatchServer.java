@@ -161,9 +161,10 @@ public class MatchServer{
 			user.send(ERR_NAME_MISMATCH);
 			return;
 		}
-		group.add(user);
 		users.put(user, group);
 		user.send(OK_JOINED_GROUP);
+		group.send(composeMessage("hook","joined",user.getName()));
+		group.add(user);
 	}
 
 	private void listGroup(User user, String msg){
@@ -204,6 +205,11 @@ public class MatchServer{
 
 	private void disconnectUser(User user){
 		out.println("Disconnected:"+user);
+		if(users.containsKey(user)){
+			users.get(user).members.remove(user.getName());
+			users.remove(user);
+		}
+		hosts.remove(user.getName());
 		try{
 			user.channel.close();
 		}catch(IOException exc){}
@@ -259,8 +265,8 @@ public class MatchServer{
 		}
 
 		public void send(String msg){
-			//channel.write(ByteBuffer.wrap(msg.getBytes(ASCII)));
-			//*
+			channel.write(ByteBuffer.wrap(msg.getBytes(ASCII)));
+			/*
 			channel.write(ByteBuffer.wrap(msg.getBytes(ASCII)), msg, new CompletionHandler<Integer, String>(){
 				public void completed(Integer i, String s){
 					out.println("sent to "+getName()+"{"+s+"}");
