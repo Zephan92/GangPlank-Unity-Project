@@ -191,10 +191,10 @@ public class MatchServer{
 	}
 
 	private static String composeUnits(String... units){
-		return Arrays.stream(units).collect(Collectors.joining(UNIT_SPLIT_STR));
+		return String.join(UNIT_SPLIT_STR, units);
 	}
 	private static String composeMessageMulti(String... records){
-		return Arrays.stream(records).collect(Collectors.joining(RECORD_SPLIT_STR))+END_TRANSMISSION;
+		return String.join(RECORD_SPLIT_STR, records)+END_TRANSMISSION;
 	}
 	private static String composeMessage(String... units){
 		return composeMessageMulti(composeUnits(units));
