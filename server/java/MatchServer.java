@@ -26,11 +26,11 @@ public class MatchServer{
 	private HashMap<String, MessageHandler> messageHandlers;
 	public MatchServer(){
 		messageHandlers = new HashMap<String, MessageHandler>();
-		messageHandlers.put("host", this::addHost);
-		messageHandlers.put("list_hosts", this::listHosts);
-		messageHandlers.put("join", this::joinGroup);
-		messageHandlers.put("list_group", this::listGroup);
-		messageHandlers.put("group", this::sendToGroup);
+		messageHandlers.put("host",this::addHost);
+		messageHandlers.put("list_hosts",this::listHosts);
+		messageHandlers.put("join",this::joinGroup);
+		messageHandlers.put("list_group",this::listGroup);
+		messageHandlers.put("group",this::sendToGroup);
 	}
 
 	public void stop(){
@@ -64,8 +64,10 @@ public class MatchServer{
 		out.println("Connected:"+user);
 		ch.read(user.buffer, user, new CompletionHandler<Integer, User>(){
 			public void completed(Integer bytesRead, User user){
-				if(user.consumeBuffer() == END_TRANSMISSION){
-					handleMessage(user, user.consumeMessage());
+				if(user.consumeBuffer()){
+					for(String msg:user.consumeMessage().split(END_TRANSMISSION_STR)){
+						handleMessage(user, msg);
+					}
 				}
 
 				if(bytesRead >= 0){
@@ -248,13 +250,28 @@ public class MatchServer{
 			if(announce) out.println("Id set:"+this);
 		}
 
-		public char consumeBuffer(){
-			if(buffer.position() <= 0) return 0;
-			byte data[] = new byte[buffer.position()];
-			((ByteBuffer)(buffer.asReadOnlyBuffer().flip())).get(data);
-			message.append(new String(data, ASCII));
+		//take the data from the buffer and append it to the message string builder
+		//return boolean indicating whether an END_TRANSMISSION was encountering, which means the message is ready to be processed
+		private boolean consumeBuffer(){
+			int pos = buffer.position();
+			if(pos <= 0) return false; //if there's no data in the buffer, don't do anything
+
+			byte data[] = new byte[pos];
+			((ByteBuffer)(buffer.asReadOnlyBuffer().flip())).get(data); //fill the data array with the data from the buffer
+			boolean found = false;
+			int endPosition = pos-1;
+			for(int i = pos-1; i >= 0; i--){
+				if(data[i] == END_TRANSMISSION){ //search the data for end_transmission
+					found = true;
+					endPosition = i+1;
+					break;
+				}
+			}
+			message.append(new String(data, 0, endPosition, ASCII)); //append the string builder with the data, up to the end position, which is either after the last end_transmission character, or all of the data
 			buffer.rewind();
-			return (char)data[data.length-1];
+			buffer.put(data, endPosition, pos-endPosition); //if the message did contain an end_transmission, but there was data in the buffer after that char, put it back in the beginning of the buffer
+
+			return found;
 		}
 
 		public String consumeMessage(){
@@ -266,16 +283,6 @@ public class MatchServer{
 
 		public void send(String msg){
 			channel.write(ByteBuffer.wrap(msg.getBytes(ASCII)));
-			/*
-			channel.write(ByteBuffer.wrap(msg.getBytes(ASCII)), msg, new CompletionHandler<Integer, String>(){
-				public void completed(Integer i, String s){
-					out.println("sent to "+getName()+"{"+s+"}");
-				}
-				public void failed(Throwable exc, String s){
-					out.println("failed to send{"+s+"} because "+exc);
-				}
-			});
-			//*/
 		}
 
 		public String toString(){
