@@ -14,7 +14,7 @@ namespace ConsoleApplication1 {
 				comm.addChatListener(str => Console.WriteLine(str));
 				comm.addNewUserListener(str => Console.WriteLine(str+" has joined the group"));
 
-				Response res = comm.connectToMatchServer();
+				CommResponse res = comm.connectToMatchServer();
 				if(res.success){
 					Console.WriteLine("Successfully connected to server");
 				}

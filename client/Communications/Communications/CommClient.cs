@@ -38,9 +38,11 @@ namespace Gangplank.Communications
 				if(read > 0){
 					builder.Append(Encoding.ASCII.GetString(buffer, 0, read));
 
-					if(buffer[read-1] == CommConstants.endTransmission){
-						processMessage(builder.ToString().TrimEnd(CommConstants.endTransmission));
-						builder = new StringBuilder();
+					if(buffer.Contains((byte)CommConstants.endTransmission)){
+						foreach(String s in builder.ToString().Split(CommConstants.endTransmission).Where(s => s.Length > 0)){
+							processMessage(s);
+						}
+						builder.Remove(0, builder.Length);
 					}
 
 					socket.BeginReceive(buffer, 0, BUFF_SIZE, 0, new AsyncCallback(ReceiveCallback), null);
