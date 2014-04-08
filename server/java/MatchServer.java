@@ -7,8 +7,7 @@ import java.util.*;
 import java.util.stream.*;
 import java.util.function.*;
 import java.util.concurrent.*;
-
-import static java.lang.System.out;
+import java.time.LocalDateTime;
 
 public class MatchServer{
 
@@ -33,6 +32,10 @@ public class MatchServer{
 		messageHandlers.put("group",this::sendToGroup);
 	}
 
+	public void println(Object o){
+		System.out.println(LocalDateTime.now()+":"+o.toString());
+	}
+
 	public void stop(){
 		try{
 			listener.close();
@@ -42,7 +45,7 @@ public class MatchServer{
 	public void start(int port){
 		try{
 			listener = AsynchronousServerSocketChannel.open().bind(new InetSocketAddress(port));
-			out.println("Listening for connections...");
+			println("Listening for connections...");
 			listener.accept(null, new CompletionHandler<AsynchronousSocketChannel,Void>() {
 				public void completed(AsynchronousSocketChannel ch, Void att) {
 					listener.accept(null, this);
@@ -50,18 +53,18 @@ public class MatchServer{
 					handleConnection(ch);
 				}
 				public void failed(Throwable exc, Void att) {
-					exc.printStackTrace(out);
+					exc.printStackTrace(System.out);
 				}
 			});
 		}catch(IOException exc){
-			out.println("Failed to establish socket, exiting");
+			println("Failed to establish socket, exiting");
 			System.exit(1);
 		}
 	}
 
 	private void handleConnection(AsynchronousSocketChannel ch){
 		User user = new User(ch);
-		out.println("Connected:"+user);
+		println("Connected:"+user);
 		ch.read(user.buffer, user, new CompletionHandler<Integer, User>(){
 			public void completed(Integer bytesRead, User user){
 				if(user.consumeBuffer()){
@@ -206,7 +209,7 @@ public class MatchServer{
 	}
 
 	private void disconnectUser(User user){
-		out.println("Disconnected:"+user);
+		println("Disconnected:"+user);
 		if(users.containsKey(user)){
 			users.get(user).members.remove(user.getName());
 			users.remove(user);
@@ -247,7 +250,7 @@ public class MatchServer{
 		private void setName(String n, boolean announce){
 			name = n;
 			tostr = name+"@"+address;
-			if(announce) out.println("Id set:"+this);
+			if(announce) println("Id set:"+this);
 		}
 
 		//take the data from the buffer and append it to the message string builder
