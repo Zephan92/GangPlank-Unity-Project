@@ -13,6 +13,7 @@ public class PlayerTurnMenu : MonoBehaviour {
 	public static bool showChoosePlayer;
 	public static bool showChatWindow;
 	public static bool showMutinyCards;
+	public static bool showCurrentMutiny;
 	public static bool[] showPathChoice = new bool[17];//0 = turn on display, 1-13 = horizontal, 14-16 = plank
 	public static int playerTurn;
 	public static int playerLoseTurn;
@@ -22,9 +23,9 @@ public class PlayerTurnMenu : MonoBehaviour {
 	public static int round;
 	public static int numOfCapCards;
 	public static bool useMethod;
-	private int mutinyCard1 = 0;
-	private int mutinyCard2 = 0;
-	private int mutinyCard3 = 0;
+	public static int mutinyCard1 = 0;
+	public static int mutinyCard2 = 0;
+	public static int mutinyCard3 = 0;
 	public int cardRangeMin = 1;
 	public int cardRangeMax = 27;
 	public Cards cards;
@@ -39,7 +40,10 @@ public class PlayerTurnMenu : MonoBehaviour {
 	private bool stealCoins;
 	private bool populateHand;
 	private bool startOfTurn;
+	private bool endGame;
 
+	public static bool mutinyHelperChoice; //true for placing, false for discarding
+	public static bool wait;
 
 	public string chatText, fieldText;
 	private Vector2 chatScroll = new Vector2(0, 0);
@@ -48,9 +52,6 @@ public class PlayerTurnMenu : MonoBehaviour {
 	private PlayerStats tempStats;
 
 	public GUIStyle buttonstyle;
-
-	//test var
-	public Texture testTexture;
 
 	//For generating tile selection for cards
 	public GUIStyle generalTile;
@@ -72,15 +73,16 @@ public class PlayerTurnMenu : MonoBehaviour {
 		showCaptainCard = false;
 		showChatWindow = false;
 		showChoosePlayer = false;
+		showCurrentMutiny = false;
 		stealCoins = false;
 		useMethod = false;
 		populateHand = false;
 		numOfCapCards = 1;
 		showMutinyCards = false;
 		startOfTurn = false;
+		endGame = false;
+		wait = false;
 
-
-		//having trouble integrating...
 		//Comm.init ();
 		Comm.addChatListener (str => {chatText += str+"\n"; chatScroll = new Vector2(chatScroll.x, Mathf.Infinity);});
 		Comm.addNewUserListener (str => {chatText += "Player "+str+" has joined the game\n"; chatScroll = new Vector2(chatScroll.x, Mathf.Infinity);});
@@ -170,7 +172,7 @@ public class PlayerTurnMenu : MonoBehaviour {
 	//Though players don't get to choose order...
 	//so captain cards should still only come up one at a time?
 	public void drawCaptainCard(){
-		randomCard = Random.Range(1,25);
+		randomCard = Random.Range(1,28);
 		randomCard = (int) Mathf.Round(randomCard);
 		displayCaptainCard = randomCard;
 		//displayCaptainCard = 6; //test specific cards
@@ -607,15 +609,41 @@ public class PlayerTurnMenu : MonoBehaviour {
 					}
 				}
 				
-				if (ps.getPlays() > 0f && (ps.getCurrentSpace() == 4 || ps.getCurrentSpace() == 10 || ps.getCurrentSpace() == 13))//need to check if they are on the correct space
+				if (ps.getPlays() > 0f && (ps.getCurrentSpace() == 4 || ps.getCurrentSpace() == 10 || ps.getCurrentSpace() == 13 || ps.getCurrentSpace() == 7))//need to check if they are on the correct space
 				{
 					if(GUI.Button(new Rect(Screen.width*1/32,
 					                       Screen.height*17/32,
 					                       Screen.width*6/32,
 					                       Screen.height*4/32), "Prepare For Mutiny"))
 					{
-						showMutinyCards = true;
-						showOptions = false;
+						if(mutinyCard1 != 0 && mutinyCard2 != 0 && mutinyCard3 != 0){
+							//doing mutiny!
+							StashCount.mutiny = true;
+
+							//deciding winner
+							//dueling? TODO later if we want...
+							//Current defaulting to "Split the Loot"
+							//extra goes to whoever started the mutiny
+							while(StashCount.stashArray[0] >= StartMenu.numberOfPlayers){
+								for(int i = 1; i <= StartMenu.numberOfPlayers; i++){
+									StashCount.stashArray[0] -= 1;
+									StashCount.stashArray[i] += 1;
+								}
+							}
+							StashCount.stashArray[playerTurn] += StashCount.stashArray[0];
+
+							//ends the game
+							PlayerTurnMenu.showOptions = false;//closes the interface
+							PlayerTurnMenu.showCards = false;//closes the card displays
+							PlayerTurnMenu.showChatWindow = false;//closes chat box
+							endGame = true;//opens the lose game display
+							mutinyCard1 = 0; mutinyCard2 = 0; mutinyCard3 = 0;
+							StashCount.stashArray[0] = 1;
+						}
+						else { //just playing a mutiny card
+							showMutinyCards = true;
+							showOptions = false;
+						}
 					}
 				}
 				else
@@ -624,15 +652,32 @@ public class PlayerTurnMenu : MonoBehaviour {
 					                 Screen.height*17/32,
 					                 Screen.width*6/32,
 					                 Screen.height*4/32), "\nPrepare For Mutiny");
-					
 				}
-				
-				GUI.Box(makeRect(2,27,4,4), "<size=14><b>" + cards.getCardTitle(mutinyCard1) + "</b></size>" 
-				        + "\n" + cards.getCardType(mutinyCard1));
-				GUI.Box(makeRect(7,27,4,4), "<size=14><b>" + cards.getCardTitle(mutinyCard2) + "</b></size>" 
-				        + "\n" + cards.getCardType(mutinyCard2));
-				GUI.Box(makeRect(12,27,4,4), "<size=14><b>" + cards.getCardTitle(mutinyCard3) + "</b></size>" 
-				        + "\n" + cards.getCardType(mutinyCard3));
+
+				if(mutinyCard1 < 100) {
+					GUI.Box(makeRect(2,27,4,4), "<size=14><b>" + cards.getCardTitle(mutinyCard1) + "</b></size>" 
+					        + "\n" + cards.getCardType(mutinyCard1));
+				}
+				else {
+					GUI.Box(makeRect(2,27,4,4), "<size=14><b>" + cards.getCCardTitle(mutinyCard1 - 100) + "</b></size>" 
+					        + "\n" + cards.getCCardType(mutinyCard1 - 100));
+				}
+				if(mutinyCard2 < 100) {
+					GUI.Box(makeRect(7,27,4,4), "<size=14><b>" + cards.getCardTitle(mutinyCard2) + "</b></size>" 
+					        + "\n" + cards.getCardType(mutinyCard2));
+				}
+				else {
+					GUI.Box(makeRect(7,27,4,4), "<size=14><b>" + cards.getCCardTitle(mutinyCard2 - 100) + "</b></size>" 
+					        + "\n" + cards.getCCardType(mutinyCard2 - 100));
+				}
+				if(mutinyCard3 < 100){
+					GUI.Box(makeRect(12,27,4,4), "<size=14><b>" + cards.getCardTitle(mutinyCard3) + "</b></size>" 
+					        + "\n" + cards.getCardType(mutinyCard3));
+				}
+				else {
+					GUI.Box(makeRect(12,27,4,4), "<size=14><b>" + cards.getCCardTitle(mutinyCard3 - 100) + "</b></size>" 
+					        + "\n" + cards.getCCardType(mutinyCard3 - 100));
+				}
 			}
 		}
 
@@ -642,15 +687,19 @@ public class PlayerTurnMenu : MonoBehaviour {
 			{
 				cards.playCaptainCard(displayCaptainCard);
 				if(numOfCapCards == 1) { //follow normal execution
-					showOptions = true;
-					showCaptainCard = false;
-					changePlayer();
+					if(!wait){
+						showOptions = true;
+						showCaptainCard = false;
+						changePlayer();
+					}
 				}
 				else { //playing multiple cards this turn
-					numOfCapCards--;
-					drawCaptainCard();
-					showOptions = false;
-					showCaptainCard = true;
+					if(!wait){
+						numOfCapCards--;
+						drawCaptainCard();
+						showOptions = false;
+						showCaptainCard = true;
+					}
 				}
 			}
 		}
@@ -796,67 +845,6 @@ public class PlayerTurnMenu : MonoBehaviour {
 			}
 		}//End of If(showCards)
 
-
-		if (showMutinyCards == true)
-		{
-			if(GUI.Button(makeRect(14,27,4,4), "<size=14><b>" + "Back" + "</b></size>", buttonstyle))
-			{
-				showOptions = true;
-				showMutinyCards = false;
-			}
-			
-			if(ps.getCurrentSpace() == 4 && cards.getCardType(cardsArray[0]) == "Weapon")
-			{
-				if(GUI.Button(makeRect(4,3,4,12), "<size=14><b>" + cards.getCardTitle(cardsArray[0]) + "</b></size>" 
-				              + "\n" + cards.getCardType(cardsArray[0]) 
-				              + "\n\n<i>" + cards.getCardDescription(cardsArray[0]) + "</i>", buttonstyle))
-				{
-					mutinyCard1 = cardsArray[0];
-					showOptions = true;
-					showMutinyCards = false;
-					cardsArray[0] = 0;
-					ps.addPlays(-1);
-					
-				}
-			}
-			else if(ps.getCurrentSpace() == 10 && cards.getCardType(cardsArray[0]) == "Restraint")
-			{
-				if(GUI.Button(makeRect(4,3,4,12), "<size=14><b>" + cards.getCardTitle(cardsArray[0]) + "</b></size>" 
-				              + "\n" + cards.getCardType(cardsArray[0]) 
-				              + "\n\n<i>" + cards.getCardDescription(cardsArray[0]) + "</i>", buttonstyle))
-				{
-					mutinyCard2 = cardsArray[0];
-					showOptions = true;
-					showMutinyCards = false;
-					cardsArray[0] = 0;
-					ps.addPlays(-1);
-					
-				}
-			}
-			else if(ps.getCurrentSpace() == 13 && cards.getCardType(cardsArray[0]) == "Clue")
-			{
-				if(GUI.Button(makeRect(4,3,4,12), "<size=14><b>" + cards.getCardTitle(cardsArray[0]) + "</b></size>" 
-				              + "\n" + cards.getCardType(cardsArray[0]) 
-				              + "\n\n<i>" + cards.getCardDescription(cardsArray[0]) + "</i>", buttonstyle))
-				{
-					mutinyCard3 = cardsArray[0];
-					showOptions = true;
-					showMutinyCards = false;
-					cardsArray[0] = 0;
-					ps.addPlays(-1);
-					
-				}
-			}
-			else
-			{
-				GUI.Box(makeRect(4,3,4,12), "<size=14><b>" + cards.getCardTitle(cardsArray[0]) + "</b></size>" 
-				        + "\n" + cards.getCardType(cardsArray[0]) 
-				        + "\n\n<i>" + cards.getCardDescription(cardsArray[0]) + "</i>");
-			}
-		}
-
-
-
 		if (showChoosePlayer == true)
 		{
 			if(playerTurn == 1)
@@ -930,8 +918,6 @@ public class PlayerTurnMenu : MonoBehaviour {
 			}
 		}
 
-
-		//commented out at the moment because I was having issue integrating the code!
 		if (showChatWindow == true)
 		{
 			GUILayout.BeginArea(makeRect (22,20,10,10));
@@ -946,6 +932,46 @@ public class PlayerTurnMenu : MonoBehaviour {
 				fieldText = "";
 			}
 			fieldText = GUI.TextField(makeRect(22,30,10,2), fieldText);
+		}
+
+		if(endGame == true)
+		{
+			if(round > 2)
+			{
+				if(GUI.Button(new Rect(Screen.width*10f/32f,
+				                       Screen.height*12f/32f,
+				                       Screen.width*12f/32f,
+				                       Screen.height*8f/32f), "Mutiny" +
+				              "\nThat was the last round, start a new game?"))
+				{
+					endGame = false;
+					Application.LoadLevel("Intermission");//Start the level over
+					StartMenu.inputServerString = "";
+					StartMenu.inputPasswordString = "";
+					StartMenu.showStartMenu = true;//show main menu box
+					StartMenu.showMakeGame = true;//show host/join menu
+					StartMenu.showHostMenu = false;//Don't show host menu
+					StartMenu.showJoinMenu = false;//Don't show join menu
+				}
+			}
+			else 
+			{
+				if(GUI.Button(new Rect(Screen.width*10f/32f,
+				                       Screen.height*12f/32f,
+				                       Screen.width*12f/32f,
+				                       Screen.height*8f/32f), "Mutiny!" +
+				              "\n          Start next round?"))
+				{
+					Application.LoadLevel("Intermission");//Start the level over
+					endGame = false;//closes the lose interface
+					StashCount.stashArray[0] = StashCount.captainStashMultiplier * StartMenu.numberOfPlayers;
+					for(int i = 1; i < StashCount.stashArray.Length;i++)//Adds more stash at beginning of round
+					{StashCount.stashArray[i] += StashCount.stash;}
+					Application.LoadLevel("InGame");//Start the level over
+					PlayerTurnMenu.showOptions = true;//opens the game interface
+					PlayerTurnMenu.playerTurn = 0;
+				}
+			}
 		}
 
 		if(showPathChoice[0] == true)
@@ -1100,6 +1126,344 @@ public class PlayerTurnMenu : MonoBehaviour {
 				movePlayerHelper(16);
 			}
 		}
+
+		if(showCurrentMutiny == true){
+			if(mutinyCard1 < 100) {
+				if(GUI.Button(makeRect(2,27,4,4), "<size=14><b>" + cards.getCardTitle(mutinyCard1) + "</b></size>" 
+				        + "\n" + cards.getCardType(mutinyCard1)))
+				{
+					showOptions = true;
+					showCurrentMutiny = false;
+					wait = false;
+					if(mutinyHelperChoice){ //place 
+						mutinyCard1 = 102; //this is the only card that sets this (#2)
+					}
+					else {//discard
+						mutinyCard1 = 0;
+					}
+
+					endTurn();
+				}
+			}
+			else {
+				if(GUI.Button(makeRect(2,27,4,4), "<size=14><b>" + cards.getCCardTitle(mutinyCard1 - 100) + "</b></size>" 
+				        + "\n" + cards.getCCardType(mutinyCard1 - 100)))
+				{
+					showOptions = true;
+					showCurrentMutiny = false;
+					wait = false;
+					if(mutinyHelperChoice){ //place 
+						mutinyCard1 = 102; //this is the only card that sets this (#2)
+					}
+					else {//discard
+						mutinyCard1 = 0;
+					}
+
+					endTurn();
+				}
+			}
+			if(mutinyCard2 < 100) {
+				if(GUI.Button(makeRect(7,27,4,4), "<size=14><b>" + cards.getCardTitle(mutinyCard2) + "</b></size>" 
+				        + "\n" + cards.getCardType(mutinyCard2)))
+				{
+					showOptions = true;
+					showCurrentMutiny = false;
+					wait = false;
+					if(mutinyHelperChoice){ //place 
+						mutinyCard2 = 102; //this is the only card that sets this (#2)
+					}
+					else {//discard
+						mutinyCard2 = 0;
+					}
+
+					endTurn();
+				}
+			}
+			else {
+				if(GUI.Button(makeRect(7,27,4,4), "<size=14><b>" + cards.getCCardTitle(mutinyCard2 - 100) + "</b></size>" 
+				        + "\n" + cards.getCCardType(mutinyCard2 - 100)))
+				{
+					showOptions = true;
+					showCurrentMutiny = false;
+					wait = false;
+					if(mutinyHelperChoice){ //place 
+						mutinyCard2 = 102; //this is the only card that sets this (#2)
+					}
+					else {//discard
+						mutinyCard2 = 0;
+					}
+
+					endTurn();
+				}
+			}
+			if(mutinyCard3 < 100){
+				if(GUI.Button(makeRect(12,27,4,4), "<size=14><b>" + cards.getCardTitle(mutinyCard3) + "</b></size>" 
+				        + "\n" + cards.getCardType(mutinyCard3)))
+				{
+					showOptions = true;
+					showCurrentMutiny = false;
+					wait = false;
+					if(mutinyHelperChoice){ //place 
+						mutinyCard3 = 102; //this is the only card that sets this (#2)
+					}
+					else {//discard
+						mutinyCard3 = 0;
+					}
+
+					endTurn();
+				}
+			}
+			else {
+				if(GUI.Button(makeRect(12,27,4,4), "<size=14><b>" + cards.getCCardTitle(mutinyCard3 - 100) + "</b></size>" 
+				        + "\n" + cards.getCCardType(mutinyCard3 - 100)))
+				{
+					showOptions = true;
+					showCurrentMutiny = false;
+					wait = false;
+					if(mutinyHelperChoice){ //place 
+						mutinyCard3 = 102; //this is the only card that sets this (#2)
+					}
+					else {//discard
+						mutinyCard3 = 0;
+					}
+					endTurn();
+
+				}
+			}
+		}
+
+		//lets players play cards into mutiny slots
+		if (showMutinyCards == true)
+		{
+			if(GUI.Button(makeRect(14,27,4,4), "<size=14><b>" + "Back" + "</b></size>"))
+			{
+				showOptions = true;
+				showMutinyCards = false;
+			}
+			
+			if(ps.getCurrentSpace() == 4)
+			{
+				if(cards.getCardType(cardsArray[0]) == "Weapon") {
+					if(GUI.Button(makeRect(1,1,5,15), " ", updateStyle(cards.getCardTexture(cardsArray[0]))))
+					{ 
+						mutinyCard1 = cardsArray[0];
+						mutinyCardHelper(0);
+					}
+				}
+				/*else {
+					GUI.Box(makeRect(4,3,4,12), " ", updateStyle(cards.getCardTexture(cardsArray[0])));
+				}*/
+				if(cards.getCardType(cardsArray[1]) == "Weapon") {
+					if(GUI.Button(makeRect(7,1,5,15), " ", updateStyle(cards.getCardTexture(cardsArray[1]))))
+					{ 
+						mutinyCard1 = cardsArray[1];
+						mutinyCardHelper(1);
+					}
+				}
+				if(cards.getCardType(cardsArray[2]) == "Weapon") {
+					if(GUI.Button(makeRect(13,1,5,15), " ", updateStyle(cards.getCardTexture(cardsArray[2]))))
+					{ 
+						mutinyCard1 = cardsArray[2];
+						mutinyCardHelper(2);
+					}
+				}
+				if(cards.getCardType(cardsArray[3]) == "Weapon") {
+					if(GUI.Button(makeRect(19,1,5,15), " ", updateStyle(cards.getCardTexture(cardsArray[3]))))
+					{ 
+						mutinyCard1 = cardsArray[3];
+						mutinyCardHelper(3);
+					}
+				}
+				if(cards.getCardType(cardsArray[4]) == "Weapon") {
+					if(GUI.Button(makeRect(25,1,5,15), " ", updateStyle(cards.getCardTexture(cardsArray[4]))))
+					{ 
+						mutinyCard1 = cardsArray[4];
+						mutinyCardHelper(4);
+					}
+				}
+				if(cards.getCardType(cardsArray[5]) == "Weapon") {
+					if(GUI.Button(makeRect(1,17,5,15), " ", updateStyle(cards.getCardTexture(cardsArray[5]))))
+					{ 
+						mutinyCard1 = cardsArray[5];
+						mutinyCardHelper(5);
+					}
+				}
+				if(cards.getCardType(cardsArray[6]) == "Weapon") {
+					if(GUI.Button(makeRect(7,17,5,15), " ", updateStyle(cards.getCardTexture(cardsArray[6]))))
+					{ 
+						mutinyCard1 = cardsArray[6];
+						mutinyCardHelper(6);
+					}
+				}
+				if(cards.getCardType(cardsArray[7]) == "Weapon") {
+					if(GUI.Button(makeRect(13,17,5,15), " ", updateStyle(cards.getCardTexture(cardsArray[7]))))
+					{ 
+						mutinyCard1 = cardsArray[7];
+						mutinyCardHelper(7);
+					}
+				}
+				if(cards.getCardType(cardsArray[8]) == "Weapon") {
+					if(GUI.Button(makeRect(19,17,5,15), " ", updateStyle(cards.getCardTexture(cardsArray[8]))))
+					{ 
+						mutinyCard1 = cardsArray[8];
+						mutinyCardHelper(8);
+					}
+				}
+				if(cards.getCardType(cardsArray[9]) == "Weapon") {
+					if(GUI.Button(makeRect(25,17,5,15), " ", updateStyle(cards.getCardTexture(cardsArray[9]))))
+					{ 
+						mutinyCard1 = cardsArray[9];
+						mutinyCardHelper(9);
+					}
+				}
+			}
+			else if(ps.getCurrentSpace() == 10)
+			{
+				if(cards.getCardType(cardsArray[0]) == "Restraint") {
+					if(GUI.Button(makeRect(1,1,5,15), " ", updateStyle(cards.getCardTexture(cardsArray[0]))))
+					{ 
+						mutinyCard2 = cardsArray[0];
+						mutinyCardHelper(0);
+					}
+				}
+				if(cards.getCardType(cardsArray[1]) == "Restraint") {
+					if(GUI.Button(makeRect(7,1,5,15), " ", updateStyle(cards.getCardTexture(cardsArray[1]))))
+					{ 
+						mutinyCard2 = cardsArray[1];
+						mutinyCardHelper(1);
+					}
+				}
+				if(cards.getCardType(cardsArray[2]) == "Restraint") {
+					if(GUI.Button(makeRect(13,1,5,15), " ", updateStyle(cards.getCardTexture(cardsArray[2]))))
+					{ 
+						mutinyCard2 = cardsArray[2];
+						mutinyCardHelper(2);
+					}
+				}
+				if(cards.getCardType(cardsArray[3]) == "Restraint") {
+					if(GUI.Button(makeRect(19,1,5,15), " ", updateStyle(cards.getCardTexture(cardsArray[3]))))
+					{ 
+						mutinyCard2 = cardsArray[3];
+						mutinyCardHelper(3);
+					}
+				}
+				if(cards.getCardType(cardsArray[4]) == "Restraint") {
+					if(GUI.Button(makeRect(25,1,5,15), " ", updateStyle(cards.getCardTexture(cardsArray[4]))))
+					{ 
+						mutinyCard2 = cardsArray[4];
+						mutinyCardHelper(4);
+					}
+				}
+				if(cards.getCardType(cardsArray[5]) == "Restraint") {
+					if(GUI.Button(makeRect(1,17,5,15), " ", updateStyle(cards.getCardTexture(cardsArray[5]))))
+					{ 
+						mutinyCard2 = cardsArray[5];
+						mutinyCardHelper(5);
+					}
+				}
+				if(cards.getCardType(cardsArray[6]) == "Restraint") {
+					if(GUI.Button(makeRect(7,17,5,15), " ", updateStyle(cards.getCardTexture(cardsArray[6]))))
+					{ 
+						mutinyCard2 = cardsArray[6];
+						mutinyCardHelper(6);
+					}
+				}
+				if(cards.getCardType(cardsArray[7]) == "Restraint") {
+					if(GUI.Button(makeRect(13,17,5,15), " ", updateStyle(cards.getCardTexture(cardsArray[7]))))
+					{ 
+						mutinyCard2 = cardsArray[7];
+						mutinyCardHelper(7);
+					}
+				}
+				if(cards.getCardType(cardsArray[8]) == "Restraint") {
+					if(GUI.Button(makeRect(19,17,5,15), " ", updateStyle(cards.getCardTexture(cardsArray[8]))))
+					{ 
+						mutinyCard2 = cardsArray[8];
+						mutinyCardHelper(8);
+					}
+				}
+				if(cards.getCardType(cardsArray[9]) == "Restraint") {
+					if(GUI.Button(makeRect(25,17,5,15), " ", updateStyle(cards.getCardTexture(cardsArray[9]))))
+					{ 
+						mutinyCard2 = cardsArray[9];
+						mutinyCardHelper(9);
+					}
+				}
+			}
+			else if(ps.getCurrentSpace() == 13)
+			{
+				if(cards.getCardType(cardsArray[0]) == "Hint") {
+					if(GUI.Button(makeRect(1,1,5,15), " ", updateStyle(cards.getCardTexture(cardsArray[0]))))
+					{ 
+						mutinyCard3 = cardsArray[0];
+						mutinyCardHelper(0);
+					}
+				}
+				if(cards.getCardType(cardsArray[1]) == "Hint") {
+					if(GUI.Button(makeRect(7,1,5,15), " ", updateStyle(cards.getCardTexture(cardsArray[1]))))
+					{ 
+						mutinyCard3 = cardsArray[1];
+						mutinyCardHelper(1);
+					}
+				}
+				if(cards.getCardType(cardsArray[2]) == "Hint") {
+					if(GUI.Button(makeRect(13,1,5,15), " ", updateStyle(cards.getCardTexture(cardsArray[2]))))
+					{ 
+						mutinyCard3 = cardsArray[2];
+						mutinyCardHelper(2);
+					}
+				}
+				if(cards.getCardType(cardsArray[3]) == "Hint") {
+					if(GUI.Button(makeRect(19,1,5,15), " ", updateStyle(cards.getCardTexture(cardsArray[3]))))
+					{ 
+						mutinyCard3 = cardsArray[3];
+						mutinyCardHelper(3);
+					}
+				}
+				if(cards.getCardType(cardsArray[4]) == "Hint") {
+					if(GUI.Button(makeRect(25,1,5,15), " ", updateStyle(cards.getCardTexture(cardsArray[4]))))
+					{ 
+						mutinyCard3 = cardsArray[4];
+						mutinyCardHelper(4);
+					}
+				}
+				if(cards.getCardType(cardsArray[5]) == "Hint") {
+					if(GUI.Button(makeRect(1,17,5,15), " ", updateStyle(cards.getCardTexture(cardsArray[5]))))
+					{ 
+						mutinyCard3 = cardsArray[5];
+						mutinyCardHelper(5);
+					}
+				}
+				if(cards.getCardType(cardsArray[6]) == "Hint") {
+					if(GUI.Button(makeRect(7,17,5,15), " ", updateStyle(cards.getCardTexture(cardsArray[6]))))
+					{ 
+						mutinyCard3 = cardsArray[6];
+						mutinyCardHelper(6);
+					}
+				}
+				if(cards.getCardType(cardsArray[7]) == "Hint") {
+					if(GUI.Button(makeRect(13,17,5,15), " ", updateStyle(cards.getCardTexture(cardsArray[7]))))
+					{ 
+						mutinyCard3 = cardsArray[7];
+						mutinyCardHelper(7);
+					}
+				}
+				if(cards.getCardType(cardsArray[8]) == "Hint") {
+					if(GUI.Button(makeRect(19,17,5,15), " ", updateStyle(cards.getCardTexture(cardsArray[8]))))
+					{ 
+						mutinyCard3 = cardsArray[8];
+						mutinyCardHelper(8);
+					}
+				}
+				if(cards.getCardType(cardsArray[9]) == "Hint") {
+					if(GUI.Button(makeRect(25,17,5,15), " ", updateStyle(cards.getCardTexture(cardsArray[9]))))
+					{ 
+						mutinyCard3 = cardsArray[9];
+						mutinyCardHelper(9);
+					}
+				}
+			}
+		}
 	}
 
 
@@ -1128,6 +1492,19 @@ public class PlayerTurnMenu : MonoBehaviour {
 		                Screen.height*height/32); 
 	}
 
+	public void endTurn(){
+		if(numOfCapCards == 1) { //follow normal execution
+				showCaptainCard = false;
+				changePlayer();
+		}
+		else { //playing multiple cards this turn
+				numOfCapCards--;
+				drawCaptainCard();
+				showOptions = false;
+				showCaptainCard = true;
+		}
+	}
+
 	public GUIStyle updateStyle(string newtext){
 		Texture2D texture = Resources.Load(newtext) as Texture2D;
 		buttonstyle.normal.background = texture;
@@ -1136,5 +1513,14 @@ public class PlayerTurnMenu : MonoBehaviour {
 
 		return buttonstyle; //just used for holder 
 		}
-	
+
+	public void mutinyCardHelper(int cardnum){
+		showOptions = true;
+		showMutinyCards = false;
+		cardsArray[cardnum] = 0;
+		ps.addPlays(-1);
+
+		//reward for playing mutiny card
+		StashCount.stashArray[playerTurn] += 2;
+	}	
 }
