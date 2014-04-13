@@ -14,7 +14,8 @@ public class PlayerTurnMenu : MonoBehaviour {
 	public static bool showChatWindow;
 	public static bool showMutinyCards;
 	public static bool showCurrentMutiny;
-	public static bool[] showPathChoice = new bool[17];//0 = turn on display, 1-13 = horizontal, 14-16 = plank
+	public static bool[] showPathChoice = new bool[18];//0 = turn on display, 1-13 = horizontal, 14-16 = plank, 17 = overboard
+	public static bool[] playersAlive = new bool[6];
 	public static int playerTurn;
 	public static int playerLoseTurn;
 	public static int targetPlayer;
@@ -61,6 +62,7 @@ public class PlayerTurnMenu : MonoBehaviour {
 	public GUIStyle restraintTile;
 	public GUIStyle hintTile;
 	public GUIStyle plankTile;
+	public GUIStyle overboardTile;
 
 	// Use this for initialization
 	void Start () 
@@ -84,9 +86,9 @@ public class PlayerTurnMenu : MonoBehaviour {
 		wait = false;
 
 		//Comm.init ();
-		Comm.addChatListener (str => {chatText += str+"\n"; chatScroll = new Vector2(chatScroll.x, Mathf.Infinity);});
-		Comm.addNewUserListener (str => {chatText += "Player "+str+" has joined the game\n"; chatScroll = new Vector2(chatScroll.x, Mathf.Infinity);});
-		//Comm.joinGroup ("renar", "foobar");
+	//	Comm.addChatListener (str => {chatText += str+"\n"; chatScroll = new Vector2(chatScroll.x, Mathf.Infinity);});
+	//	Comm.addNewUserListener (str => {chatText += "Player "+str+" has joined the game\n"; chatScroll = new Vector2(chatScroll.x, Mathf.Infinity);});
+	//	//Comm.joinGroup ("renar", "foobar");
 	}
 
 	/*void Update()
@@ -176,6 +178,7 @@ public class PlayerTurnMenu : MonoBehaviour {
 		randomCard = (int) Mathf.Round(randomCard);
 		displayCaptainCard = randomCard;
 		//displayCaptainCard = 6; //test specific cards
+		Debug.Log("Captain card is " + displayCaptainCard );
 	}
 
 
@@ -354,13 +357,13 @@ public class PlayerTurnMenu : MonoBehaviour {
 				startPlank = 14;
 			}
 			
-			if (current + spaces < 16)
+			if (current + spaces < 17)
 			{
 				endPlank = current + spaces;
 			}
 			else
 			{
-				endPlank = 16;
+				endPlank = 17;
 			}
 			
 			for(int j = startPlank; j <= endPlank; j++)
@@ -384,8 +387,8 @@ public class PlayerTurnMenu : MonoBehaviour {
 			if(current <= 7 && current + spaces > 7)
 			{
 				endPlank = (current + (spaces - 7)) + 13;
-				if (endPlank > 16)
-				{endPlank = 16;}
+				if (endPlank > 17)
+				{endPlank = 17;}
 				
 				for(int k = 14; k <= endPlank; k++)
 				{showPathChoice[k] = true;}
@@ -393,8 +396,8 @@ public class PlayerTurnMenu : MonoBehaviour {
 			else if (current - spaces < 7 && current > 7)
 			{
 				endPlank = (7 - (current - spaces)) + 13;
-				if (endPlank > 16)
-				{endPlank = 16;}
+				if (endPlank > 17)
+				{endPlank = 17;}
 				
 				for(int k = 14; k <= endPlank; k++)
 				{showPathChoice[k] = true;}
@@ -404,6 +407,7 @@ public class PlayerTurnMenu : MonoBehaviour {
 	}
 	public void movePlayerHelper(int space)
 	{
+		GameObject playOb;
 		int current = ps2.getCurrentSpace();
 		ps2.setCurrentSpace(space);
 		
@@ -424,12 +428,18 @@ public class PlayerTurnMenu : MonoBehaviour {
 			movePlayerObject.transform.position = movePlayerObject.transform.position + new Vector3((space-current)*6,0,0);
 		}
 		(Camera.main.GetComponent("FollowPlayer")as FollowPlayer).UpdateCamera(playerTurn);
-		for(int k = 1; k <= 16; k++)
+		for(int k = 1; k <= 17; k++)
 		{showPathChoice[k] = false;}
 		if(useMethod == true)
 		{
 			useMethod = false;
 			targetPlayerMethod(8,playerTurn);
+		}
+		if(ps2.getCurrentSpace() == 17)
+		{
+			playersAlive[ps2.getPlayerID()] = false;
+			playOb = (GameObject.Find("/Pirate_Ship/Players/Player_" + ps2.getPlayerID()) as GameObject);
+			playOb.SetActive(false);
 		}
 	}
 	
@@ -461,6 +471,12 @@ public class PlayerTurnMenu : MonoBehaviour {
 			tempPlayer.transform.position = tempPlayer.transform.position + new Vector3((space-current)*6,0,0);
 		}
 		(Camera.main.GetComponent("FollowPlayer")as FollowPlayer).UpdateCamera(playerTurn);
+		if(tempStats.getCurrentSpace() == 17)
+		{
+			playersAlive[tempStats.getPlayerID()] = false;
+			tempPlayer = (GameObject.Find("/Pirate_Ship/Players/Player_" + tempStats.getPlayerID()) as GameObject);
+			tempPlayer.SetActive(false);
+		}
 	}
 	
 	public void moveTowardOverboard(int player,int spaces)
@@ -506,12 +522,16 @@ public class PlayerTurnMenu : MonoBehaviour {
 				current = 14 + (movement - 1);
 			}
 			else
-				current = 16;
+				current = 17;
 		}
 		
 		//finally, actually move the player
 		changePlayerLocation (player, current); //at this point, current is actually the new location
-		
+		if(tempStats.getCurrentSpace() == 17)
+		{
+			playersAlive[tempStats.getPlayerID()] = false;
+			(GameObject.Find("/Pirate_Ship/Players/Player_" + tempStats.getPlayerID()) as GameObject).SetActive(false);
+		}
 	}
 
 
@@ -533,36 +553,17 @@ public class PlayerTurnMenu : MonoBehaviour {
 			{
 				//Debug.Log("current player is " + ps.ToString());
 				//Debug.Log ("In player interface");
-				GUI.Box(new Rect(Screen.width*1/32,
-				                 Screen.height*2/32,
-				                 Screen.width*6/32,
-				                 Screen.height*4/32), "\nPlayer " + playerTurn);
-				
-				
-				GUI.Box(new Rect(Screen.width*8/32,
-				                 Screen.height*2/32,
-				                 Screen.width*3/32,
-				                 Screen.height*4/32), "\n" + "Cards: " + ps.getPlays());
-				
-				
-				GUI.Box(new Rect(Screen.width*12/32,
-				                 Screen.height*2/32,
-				                 Screen.width*6/32,
-				                 Screen.height*4/32), "\nRound " + round);
+				GUI.Box(makeRect(1,2,6,4), "\nPlayer " + playerTurn);
+				GUI.Box(makeRect(8,2,3,4), "\n" + "Cards: " + ps.getPlays());
+				GUI.Box(makeRect(12,3,6,4), "\nRound " + round);
 				
 				if (ps.getPlays() > 0f)
 				{
-					GUI.Box(new Rect(Screen.width*1/32,
-					                 Screen.height*7/32,
-					                 Screen.width*6/32,
-					                 Screen.height*4/32), "\n End Turn");
+					GUI.Box(makeRect(1,7,6,4), "\n End Turn");
 				}
 				else
 				{
-					if(GUI.Button(new Rect(Screen.width*1/32,
-					                       Screen.height*7/32,
-					                       Screen.width*6/32,
-					                       Screen.height*4/32), "\n End Turn")) 
+					if(GUI.Button(makeRect(1,7,6,4), "\n End Turn")) 
 					{
 						ps.addCards(2 - ps.getLostCards());
 						ps.setLostCards(0);
@@ -585,17 +586,11 @@ public class PlayerTurnMenu : MonoBehaviour {
 				
 				if (ps.getPlays() == 0f )
 				{
-					GUI.Box(new Rect(Screen.width*1f/32f,
-					                 Screen.height*12f/32f,
-					                 Screen.width*6f/32f,
-					                 Screen.height*4f/32f), "\nPlay A Card");
+					GUI.Box(makeRect(1,12,6,4), "\nPlay A Card");
 				}
 				else
 				{
-					if(GUI.Button(new Rect(Screen.width*1/32,
-					                       Screen.height*12/32,
-					                       Screen.width*6/32,
-					                       Screen.height*4/32), "Play A Card")) 
+					if(GUI.Button(makeRect(1,12,6,4), "Play A Card")) 
 					{
 						//Debug.Log("Inside Play A card button");
 						///Debug.Log("Number of cards to play: " + ps.getCardsToAdd());
@@ -611,10 +606,7 @@ public class PlayerTurnMenu : MonoBehaviour {
 				
 				if (ps.getPlays() > 0f && (ps.getCurrentSpace() == 4 || ps.getCurrentSpace() == 10 || ps.getCurrentSpace() == 13 || ps.getCurrentSpace() == 7))//need to check if they are on the correct space
 				{
-					if(GUI.Button(new Rect(Screen.width*1/32,
-					                       Screen.height*17/32,
-					                       Screen.width*6/32,
-					                       Screen.height*4/32), "Prepare For Mutiny"))
+					if(GUI.Button(makeRect(1,17,6,4), "Prepare For Mutiny"))
 					{
 						if(mutinyCard1 != 0 && mutinyCard2 != 0 && mutinyCard3 != 0){
 							//doing mutiny!
@@ -648,10 +640,7 @@ public class PlayerTurnMenu : MonoBehaviour {
 				}
 				else
 				{
-					GUI.Box(new Rect(Screen.width*1/32,
-					                 Screen.height*17/32,
-					                 Screen.width*6/32,
-					                 Screen.height*4/32), "\nPrepare For Mutiny");
+					GUI.Box(makeRect(1,17,6,4), "\nPrepare For Mutiny");
 				}
 
 				if(mutinyCard1 < 100) {
@@ -928,7 +917,7 @@ public class PlayerTurnMenu : MonoBehaviour {
 			GUILayout.EndScrollView();
 			GUILayout.EndArea();
 			if(Event.current.isKey && Event.current.keyCode == KeyCode.Return && fieldText.Length > 0){
-				Comm.sendChat(fieldText);
+		//		Comm.sendChat(fieldText);
 				fieldText = "";
 			}
 			fieldText = GUI.TextField(makeRect(22,30,10,2), fieldText);
@@ -938,11 +927,7 @@ public class PlayerTurnMenu : MonoBehaviour {
 		{
 			if(round > 2)
 			{
-				if(GUI.Button(new Rect(Screen.width*10f/32f,
-				                       Screen.height*12f/32f,
-				                       Screen.width*12f/32f,
-				                       Screen.height*8f/32f), "Mutiny" +
-				              "\nThat was the last round, start a new game?"))
+				if(GUI.Button(makeRect(10,12,12,8), "Mutiny" + "\nThat was the last round, start a new game?"))
 				{
 					endGame = false;
 					Application.LoadLevel("Intermission");//Start the level over
@@ -956,11 +941,7 @@ public class PlayerTurnMenu : MonoBehaviour {
 			}
 			else 
 			{
-				if(GUI.Button(new Rect(Screen.width*10f/32f,
-				                       Screen.height*12f/32f,
-				                       Screen.width*12f/32f,
-				                       Screen.height*8f/32f), "Mutiny!" +
-				              "\n          Start next round?"))
+				if(GUI.Button(makeRect(10,12,12,8), "Mutiny!" + "\n          Start next round?"))
 				{
 					Application.LoadLevel("Intermission");//Start the level over
 					endGame = false;//closes the lose interface
@@ -1124,6 +1105,15 @@ public class PlayerTurnMenu : MonoBehaviour {
 			{
 				showPathChoice[0] = false;
 				movePlayerHelper(16);
+			}
+
+			buttonChar = checkForPlayer(17);
+			if(showPathChoice[17] == false)
+			{GUI.Box(makeRect(15,18,1,2), buttonChar, offTile);}
+			else if (GUI.Button(makeRect(15,18,1,2), buttonChar, overboardTile))
+			{
+				showPathChoice[0] = false;
+				movePlayerHelper(17);
 			}
 		}
 

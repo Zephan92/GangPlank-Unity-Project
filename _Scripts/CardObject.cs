@@ -121,7 +121,7 @@ public class CardObject : MonoBehaviour {
 			break;
 
 		case 13:
-			ptm.ps.setPlays(2);
+			ptm.ps.setPlays(3);
 			ptm.ps.addCards(2);
 			//Draw 2 card and play them immediately.
 			break;
@@ -132,7 +132,7 @@ public class CardObject : MonoBehaviour {
 			break;
 
 		case 15:
-			ptm.ps.setPlays(3);
+			ptm.ps.setPlays(4);
 			ptm.ps.addCards(3);
 			//draw 3 cards
 			break;

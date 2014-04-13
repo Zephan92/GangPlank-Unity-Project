@@ -31,7 +31,7 @@ public class StartMenu : MonoBehaviour {
 		showHostMenu = false;//Don't show host menu
 		showJoinMenu = false;//Don't show join menu
 		hSliderValue = 2.0f;
-		Comm.init ();
+	//	Comm.init ();
 	}
 	
 	
@@ -142,7 +142,7 @@ public class StartMenu : MonoBehaviour {
 						PlayerTurnMenu.showOptions = true;//turn on the player interface
 						PlayerTurnMenu.showChatWindow = true;//turn on chat window
 						PlayerTurnMenu.round = 0;
-						Comm.hostGroup(saveServer);
+	//					Comm.hostGroup(saveServer);
 					}
 
 				}
@@ -213,7 +213,7 @@ public class StartMenu : MonoBehaviour {
 						PlayerTurnMenu.showOptions = true;//turn on player interface
 						PlayerTurnMenu.showChatWindow = true;//turn on chat window
 						PlayerTurnMenu.round = 0;
-						Comm.joinGroup(saveServer, savePassword);
+		//				Comm.joinGroup(saveServer, savePassword);
 					}
 
 				}
