@@ -1,0 +1,7 @@
+C:\Users\Renar\SkyDrive\school\ipro361\ipro497-361\client\Communications\Communications\bin\Release\Communications.dll
+C:\Users\Renar\SkyDrive\school\ipro361\ipro497-361\client\Communications\Communications\bin\Release\Communications.pdb
+C:\Users\Renar\SkyDrive\school\ipro361\ipro497-361\client\Communications\Communications\bin\Release\Communications.dll.CodeAnalysisLog.xml
+C:\Users\Renar\SkyDrive\school\ipro361\ipro497-361\client\Communications\Communications\bin\Release\Communications.dll.lastcodeanalysissucceeded
+C:\Users\Renar\SkyDrive\school\ipro361\ipro497-361\client\Communications\Communications\obj\Release\Communications.csprojResolveAssemblyReference.cache
+C:\Users\Renar\SkyDrive\school\ipro361\ipro497-361\client\Communications\Communications\obj\Release\Communications.dll
+C:\Users\Renar\SkyDrive\school\ipro361\ipro497-361\client\Communications\Communications\obj\Release\Communications.pdb

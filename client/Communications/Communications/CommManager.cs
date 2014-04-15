@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Text;
-using System.Threading;
 using System.Linq;
 using System.Collections.Generic;
 
@@ -49,6 +47,10 @@ namespace Gangplank.Communications {
 			client.addHook("chat", callback);
 		}
 
+		public void addMoveListener(UpdateDelegate callback){
+			client.addHook("move", callback);
+		}
+
 		public void addNewUserListener(UpdateDelegate callback){
 			client.addHook("joined", callback);
 		}
@@ -79,7 +81,11 @@ namespace Gangplank.Communications {
 		}
 
 		public CommResponse sendChat(string msg){
-			return send(composeMessage("group","chat", DateTime.Now+" "+name+":"+msg));
+			return send(composeMessage("group","chat", DateTime.Now+" "+name+": "+msg));
+		}
+
+		public CommResponse sendMove(string msg){
+			return send(composeMessage("group", "move", msg));
 		}
 
       private static string composeUnits(params string[] units) {
@@ -94,5 +100,5 @@ namespace Gangplank.Communications {
 		private static string composeMessage(string cmd, string[] args) {
 			return composeMessageMulti(composeUnits(cmd, composeUnits(args)));
 		}
-    }
+	}
 }
