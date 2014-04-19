@@ -46,7 +46,7 @@ public class StashCount : MonoBehaviour {
 	//Calls every update
 	void OnGUI()
 	{
-
+		GUI.skin.box.alignment = TextAnchor.MiddleCenter;
 
 		//If The interface is on, show all the stashes.
 		if(PlayerTurnMenu.showOptions == true)
@@ -60,63 +60,6 @@ public class StashCount : MonoBehaviour {
 					{stashArray[i] = stash;}
 				}
 			}
-			//Captain Stash
-			GUI.Box(new Rect(Screen.width*25f/32f,
-			                 Screen.height*2f/32f,
-			                 Screen.width*6f/32f,
-			                 Screen.height*2f/32f), "Captain's Gold Stash: " + stashArray[0]);
-
-			//Player 1 Stash
-			GUI.Box(new Rect(Screen.width*25f/32f,
-			                 Screen.height*5f/32f,
-			                 Screen.width*6f/32f,
-			                 Screen.height*2f/32f), "Player One's Gold Stash: " + stashArray[1]);
-
-			if(StartMenu.numberOfPlayers > 1)
-			{
-				//Player 2 Stash
-				GUI.Box(new Rect(Screen.width*25f/32f,
-				                 Screen.height*8f/32f,
-				                 Screen.width*6f/32f,
-				                 Screen.height*2f/32f), "Player Two's Gold Stash: " + stashArray[2]);
-			}
-			if(StartMenu.numberOfPlayers > 2)
-			{
-				//Player 3 Stash
-				GUI.Box(new Rect(Screen.width*25f/32f,
-				                 Screen.height*11f/32f,
-				                 Screen.width*6f/32f,
-				                 Screen.height*2f/32f), "Player Three's Gold Stash: " + stashArray[3]);
-			}
-			if(StartMenu.numberOfPlayers > 3)
-			{
-				//Player 4 Stash
-				GUI.Box(new Rect(Screen.width*25f/32f,
-				                 Screen.height*14f/32f,
-				                 Screen.width*6f/32f,
-				                 Screen.height*2f/32f), "Player Four's Gold Stash: " + stashArray[4]);
-			}
-			if(StartMenu.numberOfPlayers > 4)
-			{
-				//Player 5 Stash
-				GUI.Box(new Rect(Screen.width*25f/32f,
-				                 Screen.height*17f/32f,
-				                 Screen.width*6f/32f,
-				                 Screen.height*2f/32f), "Player Five's Gold Stash: " + stashArray[5]);
-			}
-			if(StartMenu.numberOfPlayers > 5)
-			{
-				//Player 6 Stash
-				GUI.Box(new Rect(Screen.width*25f/32f,
-				                 Screen.height*20f/32f,
-				                 Screen.width*6f/32f,
-				                 Screen.height*2f/32f), "Player Six's Gold Stash: " + stashArray[6]);
-			}
-
-
-
-
-
 		}
 
 		//Debug.Log ("ShowLoseGame Menu = " + showLoseGame);
@@ -156,10 +99,20 @@ public class StashCount : MonoBehaviour {
 					{stashArray[i] += stash;}
 					Application.LoadLevel("InGame");//Start the level over
 					PlayerTurnMenu.showOptions = true;//opens the game interface
+					PlayerTurnMenu.showChatWindow = true;
+					PlayerTurnMenu.showOpenButton = false;
 					PlayerTurnMenu.playerTurn = 0;
 					//Debug.Log ("Restart Round");
 				}
 			}
 		}
+	}
+
+	private Rect makeRect(int startWidth, int startHeight, int width, int height)
+	{
+		return new Rect(Screen.width*startWidth/32,
+		                Screen.height*startHeight/32,
+		                Screen.width*width/32,
+		                Screen.height*height/32); 
 	}
 }

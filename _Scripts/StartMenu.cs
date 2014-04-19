@@ -1,5 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
+using UnityEngine;
+using System.Collections;
 
 /*
 GangPlank StartMenu - Updated: 2/25/14
@@ -20,7 +22,8 @@ public class StartMenu : MonoBehaviour {
 	private float hSliderValue;//dynamic slider variable for player count
 	public static float numberOfPlayers = 6f;//Player count
 
-
+	public GUIStyle titleStyle;
+	
 	// Use this for initialization
 	void Start () 
 	{
@@ -31,19 +34,22 @@ public class StartMenu : MonoBehaviour {
 		showHostMenu = false;//Don't show host menu
 		showJoinMenu = false;//Don't show join menu
 		hSliderValue = 2.0f;
-	//	Comm.init ();
+		Comm.init ();
 	}
 	
 	
 	//Calls every update
 	void OnGUI()
 	{
-
+		
 		if (showStartMenu == true)//if true, show main menu
 		{
 			//Main Menu Box
-			GUI.Box(new Rect(Screen.width/64f,Screen.height/32f,Screen.width - Screen.width/32f,Screen.height - Screen.height/16f), "GangPlank");
-
+			GUI.Box(new Rect(Screen.width/8f,
+			                 Screen.height*1/32,
+			                 Screen.width - Screen.width/4f,Screen.height/4f), "GangPlank\n" +
+			                 	"<size=30>Money, Mutiny and Mayhem</size>", titleStyle);
+			
 
 			//if true show main menu options
 			if(showMakeGame == true)
@@ -54,7 +60,7 @@ public class StartMenu : MonoBehaviour {
 					showHostMenu = true;//Turn on host menu
 					showMakeGame = false;//Turn off host/join options
 				}
-
+				
 				//show join option
 				if(GUI.Button(new Rect(Screen.width/8f,Screen.height/3f + Screen.height/4f + Screen.height/16f,Screen.width - Screen.width/4f,Screen.height/4f), "Join a game")) 
 				{
@@ -62,63 +68,63 @@ public class StartMenu : MonoBehaviour {
 					showMakeGame = false;//Turn off host/join options
 				}
 			}
-
-
+			
+			
 			//if true show host menu
 			if(showHostMenu == true)
 			{
-
+				
 				//Show server name box
 				GUI.Box(new Rect(Screen.width*3f/32f,
-				                 Screen.height*3f/32f,
+				                 Screen.height*7f/32f,
 				                 Screen.width*12f/32f,
 				                 Screen.height*4f/32f), "Server Name");
-
-
-
+				
+				
+				
 				//server name variable text box
 				inputServerString = GUI.TextArea(new Rect(Screen.width*17f/32f,
-				                                          Screen.height*3f/32f,
+				                                          Screen.height*7f/32f,
 				                                          Screen.width*12f/32f,
 				                                          Screen.height*4f/32f), inputServerString);
 				//show server password box
 				GUI.Box(new Rect(Screen.width*3f/32f,
-				                 Screen.height*8f/32f,
+				                 Screen.height*12f/32f,
 				                 Screen.width*12f/32f,
 				                 Screen.height*4f/32f), "Server Password");
-
-
+				
+				
 				//server name variable text box
 				inputPasswordString = GUI.TextArea(new Rect(Screen.width*17f/32f,
-				                                            Screen.height*8f/32f,
+				                                            Screen.height*12f/32f,
 				                                            Screen.width*12f/32f,
 				                                            Screen.height*4f/32f), inputPasswordString);
-
-
+				
+				
 				//show player box
 				GUI.Box(new Rect(Screen.width*3f/32f,
-				                 Screen.height*13f/32f,
+				                 Screen.height*17f/32f,
 				                 Screen.width*12f/32f,
 				                 Screen.height*4f/32f), "Players") ;
-
-
+				
+				
 				//show player slider
 				GUI.Label(new Rect(Screen.width*17f/32f,
-				                   Screen.height*29f/64f,
+				                   Screen.height*36f/64f,
 				                   Screen.width*12f/32f,
 				                   Screen.height*4f/32f),hSliderValue.ToString());
-
-
+				
+				
 				//take the user input value for slider
 				hSliderValue = GUI.HorizontalSlider(new Rect(Screen.width*18f/32f,
-				                                             Screen.height*29f/64f,
+				                                             Screen.height*36f/64f,
 				                                             Screen.width*11f/32f,
 				                                             Screen.height*4f/32f), hSliderValue,2.0f, 6f);
-
+				
 				//round up the slider value
 				hSliderValue = Mathf.Round(hSliderValue);
-
-
+				
+				
 				//Create game button
 				if(GUI.Button(new Rect(Screen.width*8/32f,
 				                       Screen.height*26/32f,
@@ -142,12 +148,12 @@ public class StartMenu : MonoBehaviour {
 						PlayerTurnMenu.showOptions = true;//turn on the player interface
 						PlayerTurnMenu.showChatWindow = true;//turn on chat window
 						PlayerTurnMenu.round = 0;
-	//					Comm.hostGroup(saveServer);
+						Comm.hostGroup(saveServer);
 					}
-
+					
 				}
-
-
+				
+				
 				//Back button
 				if(GUI.Button(new Rect(Screen.width*25f/32f,
 				                       Screen.height*26f/32f,
@@ -159,38 +165,38 @@ public class StartMenu : MonoBehaviour {
 					showMakeGame = true;//turn on main
 				}
 			}
-
-
+			
+			
 			//if true turn on join menu
 			if(showJoinMenu == true)
 			{
-
+				
 				//server name box
 				GUI.Box(new Rect(Screen.width*3f/32f,
 				                 Screen.height*7f/32f,
 				                 Screen.width*12f/32f,
 				                 Screen.height*8f/32f), "Server Name");
-
+				
 				//server name input
 				inputServerString = GUI.TextArea(new Rect(Screen.width*17f/32f,
 				                                          Screen.height*7f/32f,
 				                                          Screen.width*12f/32f,
 				                                          Screen.height*8f/32f), inputServerString);
-
-
+				
+				
 				//server password box
 				GUI.Box(new Rect(Screen.width*3f/32f,
 				                 Screen.height*16f/32f,
 				                 Screen.width*12f/32f,
 				                 Screen.height*8f/32f), "Server Password");
-
-
+				
+				
 				//server password input
 				inputPasswordString = GUI.TextArea(new Rect(Screen.width*17f/32f,
 				                                            Screen.height*16f/32f,
 				                                            Screen.width*12f/32f,
 				                                            Screen.height*8f/32f), inputPasswordString);
-
+				
 				//try and join game
 				if(GUI.Button(new Rect(Screen.width*8f/32f,
 				                       Screen.height*26f/32f,
@@ -213,12 +219,12 @@ public class StartMenu : MonoBehaviour {
 						PlayerTurnMenu.showOptions = true;//turn on player interface
 						PlayerTurnMenu.showChatWindow = true;//turn on chat window
 						PlayerTurnMenu.round = 0;
-		//				Comm.joinGroup(saveServer, savePassword);
+						Comm.joinGroup(saveServer, savePassword);
 					}
-
+					
 				}
-
-
+				
+				
 				//go back to main menu
 				if(GUI.Button(new Rect(Screen.width*25f/32f,
 				                       Screen.height*26f/32f,
@@ -233,3 +239,4 @@ public class StartMenu : MonoBehaviour {
 		}
 	}
 }
+

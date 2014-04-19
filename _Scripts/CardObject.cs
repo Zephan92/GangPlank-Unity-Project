@@ -10,14 +10,14 @@ public class CardObject : MonoBehaviour {
 	private string description; //Flavour text
 	private string type; //Weapon, Hint, Restraint, Move, General
 	private string texture; //used for the card image
-
+	
 	private PlayerTurnMenu ptm;
 	private GameObject tempPlayer;
 	private PlayerStats tempStats;
 	
 	private float maxNumCoins, minNumCoins, check;
 	private int playermax, playermin;
-
+	
 	void Start(){
 		cardNumber = 0;
 		title = "";
@@ -26,7 +26,7 @@ public class CardObject : MonoBehaviour {
 		texture = "none";
 		ptm = gameObject.GetComponent("PlayerTurnMenu") as PlayerTurnMenu;
 	}
-
+	
 	//for player cards
 	public void action(PlayerTurnMenu ptm){
 		switch(cardNumber)
@@ -50,26 +50,26 @@ public class CardObject : MonoBehaviour {
 			//Steal 2 coins from any player
 			//how to (see case 1)
 			break;
-
+			
 		case 3:
 			//move 1 space
 			ptm.movePlayer(PlayerTurnMenu.playerTurn,1);
 			break;
-
+			
 		case 4:
 			PlayerTurnMenu.showChoosePlayer = true;
 			PlayerTurnMenu.targetMethod = 1;
 			PlayerTurnMenu.targetAmount = 1;
 			//Move another player one space
 			break;
-
+			
 		case 5:
 			PlayerTurnMenu.showChoosePlayer = true;
 			PlayerTurnMenu.targetMethod = 1;
 			PlayerTurnMenu.targetAmount = 2;
 			//Move another player up to 2 spaces
 			break;
-
+			
 		case 6:
 			//PlayerTurnMenu.targetMethod = 2;
 			//PlayerTurnMenu.targetAmount = 2;
@@ -79,112 +79,112 @@ public class CardObject : MonoBehaviour {
 					ptm.moveTowardOverboard(i, 2);
 			}
 			break;
-		
+			
 		case 7:
 			//rope - save yourself from falling overboard
 			//draw a card
 			//player goes back to the end of the plank
 			//TODO
 			break;
-
+			
 		case 8:
 			PlayerTurnMenu.showChoosePlayer = true;
 			PlayerTurnMenu.targetMethod = 3;
 			PlayerTurnMenu.targetAmount = -1;
 			//Another player only draws and plays 1 card on their next turn
 			break;
-
+			
 		case 9:
 			PlayerTurnMenu.showChoosePlayer = true;
 			PlayerTurnMenu.targetMethod = 4;
 			PlayerTurnMenu.targetAmount = 0;
 			//Pull another player into your space
 			break;
-
+			
 		case 10:
 			PlayerTurnMenu.showChoosePlayer = true;
 			PlayerTurnMenu.targetMethod = 5;
 			//Force a player to lose their next turn
 			break;
-
+			
 		case 11:
 			PlayerTurnMenu.showChoosePlayer = true;
 			PlayerTurnMenu.targetMethod = 4;
 			PlayerTurnMenu.targetAmount = 1;
 			//Switch places with another player
 			break;
-
+			
 		case 12:
 			PlayerTurnMenu.showChoosePlayer = true;
 			PlayerTurnMenu.targetMethod = 6;
 			//Target player cannot use rope cards for the rest of the game
 			break;
-
+			
 		case 13:
 			ptm.ps.setPlays(3);
 			ptm.ps.addCards(2);
 			//Draw 2 card and play them immediately.
 			break;
-
+			
 		case 14:
 			ptm.targetPlayerMethod(7,PlayerTurnMenu.playerTurn);
 			//move to any mutiny space
 			break;
-
+			
 		case 15:
 			ptm.ps.setPlays(4);
 			ptm.ps.addCards(3);
 			//draw 3 cards
 			break;
-
+			
 		case 16:
 			StashCount.stashArray[0] -= 1;
 			StashCount.stashArray[PlayerTurnMenu.playerTurn] += 1;
 			//steal 1 coins from stash
 			break;
-
+			
 		case 17:
 			ptm.movePlayer(PlayerTurnMenu.playerTurn,3);
 			//move 3
 			break;
-
+			
 		case 18:
 			ptm.movePlayer(PlayerTurnMenu.playerTurn,5);
 			//move 5
 			break;
-
+			
 		case 19:
 			PlayerTurnMenu.targetAmount = 1;
 			ptm.targetPlayerMethod(8,PlayerTurnMenu.playerTurn);
 			//Move 1 space
 			//Take 1 coin from each opponent in that space
 			break;
-
+			
 		case 20:
 			PlayerTurnMenu.showChoosePlayer = true;
 			PlayerTurnMenu.targetMethod = 9;
 			PlayerTurnMenu.targetAmount = 1;
 			//move an opponent 1 space and steal a coin from them
 			break;
-
+			
 		case 21:
 			//take 2 coins from the stash
 			StashCount.stashArray[0] -= 2;
 			StashCount.stashArray[PlayerTurnMenu.playerTurn] += 2;
 			break;
-
+			
 		case 22:
 			//Move up to 3 spaces and take up to 1 coin from a player on the way
 			//TODO
 			break;
-
+			
 		case 23:
 			PlayerTurnMenu.targetAmount = 1;
 			for(int i = 1; i <= StartMenu.numberOfPlayers; i++)
 				ptm.targetPlayerMethod(2,i);
 			//Steal one coin from each player
 			break;
-
+			
 		case 24:
 			//move 1 space
 			//draw 1 card and play immediately
@@ -192,7 +192,7 @@ public class CardObject : MonoBehaviour {
 			ptm.ps.setPlays(1);
 			ptm.ps.addCards(1);
 			break;
-
+			
 		case 25:
 			//take 2 coins from the stash
 			StashCount.stashArray[0] -= 2;
@@ -200,25 +200,25 @@ public class CardObject : MonoBehaviour {
 			//draw a second captain's card this turn 
 			PlayerTurnMenu.numOfCapCards = 2;
 			break;
-
+			
 		case 26:
 			ptm.targetPlayerMethod(10,1);
 			//take 5 coins from the stash
 			//give 1 to each opponent
 			//if any leftover give to player
 			break;
-
+			
 		case 27:
 			//Do not draw a Captain's Card this turn
 			PlayerTurnMenu.numOfCapCards = 0;
 			break;
-
+			
 		default:
 			Debug.Log("I think you broke it");
 			break;
 		}
 	}
-
+	
 	//Actions for Captain cards
 	public void actionCpt(PlayerTurnMenu ptm){
 		switch(cardNumber)
@@ -242,7 +242,6 @@ public class CardObject : MonoBehaviour {
 				}
 				
 			}
-			//TODO
 			//place this card in any mutiny slot
 			PlayerTurnMenu.mutinyHelperChoice = true;
 			PlayerTurnMenu.wait = true;
@@ -267,9 +266,11 @@ public class CardObject : MonoBehaviour {
 				if(temp > maxNumCoins){maxNumCoins = temp;}
 			}
 			
-			if (minNumCoins == maxNumCoins)
+			if (minNumCoins == maxNumCoins){
+				//Debug.Log("Min: " + minNumCoins + "\n Max: " + maxNumCoins);
 				return;
-			
+			}
+
 			for(int i = 1; i <= StartMenu.numberOfPlayers; i++){
 				if(StashCount.stashArray[i] == maxNumCoins){
 					StashCount.stashArray[i] -= 1;
@@ -414,13 +415,15 @@ public class CardObject : MonoBehaviour {
 				StashCount.stashArray[0] -= 1;
 				StashCount.stashArray[i] += 1;
 			}
-			//TODO
 			//remove one mutiny card (by choice?)
-			PlayerTurnMenu.mutinyHelperChoice = false;
-			PlayerTurnMenu.wait = true;
-			PlayerTurnMenu.showCurrentMutiny = true;
-			PlayerTurnMenu.showOptions = false;
-			//PlayerTurnMenu.mutinyOption = 0;
+			if(PlayerTurnMenu.mutinyCard1 != 0 || PlayerTurnMenu.mutinyCard2 != 0
+			   || PlayerTurnMenu.mutinyCard3 != 0){
+				PlayerTurnMenu.mutinyHelperChoice = false;
+				PlayerTurnMenu.wait = true;
+				PlayerTurnMenu.showCurrentMutiny = true;
+				PlayerTurnMenu.showOptions = false;
+				//PlayerTurnMenu.mutinyOption = 0;
+			}
 			break;
 			
 		case 23:
@@ -443,7 +446,7 @@ public class CardObject : MonoBehaviour {
 				
 			}
 			break;
-
+			
 		case 26:
 			//all players in the weapon space must move to the plank
 			for(int i = 1; i <= StartMenu.numberOfPlayers; i++){
@@ -464,7 +467,7 @@ public class CardObject : MonoBehaviour {
 			//add 2 coins to the stash
 			StashCount.stashArray[0] += 2;
 			break;
-
+			
 		case 27:
 			//all players in the restraint space space must move to the plank
 			for(int i = 1; i <= StartMenu.numberOfPlayers; i++){
@@ -485,7 +488,7 @@ public class CardObject : MonoBehaviour {
 			//add 2 coins to the stash
 			StashCount.stashArray[0] += 2;
 			break;
-
+			
 		case 28:
 			//all players in the hint space must move to the plank
 			for(int i = 1; i <= StartMenu.numberOfPlayers; i++){
@@ -502,61 +505,61 @@ public class CardObject : MonoBehaviour {
 			}
 			//place this card in the hint slot
 			PlayerTurnMenu.mutinyCard3 = 128;
-
+			
 			//add 2 coins to the stash
 			StashCount.stashArray[0] += 2;
 			break;
-
+			
 		default:
 			Debug.Log("I think you broke it");
 			break;
 		}
 	}
-
+	
 	public int getID(){
 		return cardNumber;
 	}
-
+	
 	public string getTitle(){
 		return title;
 	}
-
+	
 	public string getDesc(){
 		return description;		
 	}
-
+	
 	public string getType(){
 		return type;		
 	}
-
+	
 	public string getTexture(){
 		return texture;
 	}
-
+	
 	public void setID(int id){
 		cardNumber = id;
 	}
-
+	
 	public void setTitle(string t){
 		title = t;
 	}
-
+	
 	public void setDesc(string desc){
 		description = desc;
 	}
-
+	
 	public void setType(string ty){
 		if (ty.Equals ("Weapon") || ty.Equals ("Restraint") || ty.Equals ("Hint") || ty.Equals ("Move") || ty.Equals("General") || ty.Equals("Captain"))
 			type = ty;
 		else 
 			type = "";
-				
+		
 	}
-
+	
 	public void setTexture(string tx){
 		texture = tx;
 	}
-
+	
 	//Helper methods for actions
 	private void discardCards(string cardType, PlayerTurnMenu ptm){
 		for(int i = 1; i <= StartMenu.numberOfPlayers; i++){
@@ -576,10 +579,10 @@ public class CardObject : MonoBehaviour {
 				}
 			}
 			tempStats.setCards(tempCards);
-			ptm.AddCardsToHand(count);
+			ptm.AddCardsToHand2(count, i);
 		}
 	}
-
+	
 	//returns the amount that is substracted
 	private float checkStash(int player, float value){
 		if (StashCount.stashArray[player] - value < 0)
