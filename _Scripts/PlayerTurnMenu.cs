@@ -6,14 +6,6 @@ using System.Collections;
 //Need to always fill the first 3-5 slots
 //Show digital players, their hand when they have no turn.
 
-using UnityEngine;
-using System.Collections;
-
-
-//Need to change around when to pick up your cards
-//Need to always fill the first 3-5 slots
-//Show digital players, their hand when they have no turn.
-
 public class PlayerTurnMenu : MonoBehaviour {
 	public static bool showOptions;
 	public static bool showCards;
@@ -27,7 +19,7 @@ public class PlayerTurnMenu : MonoBehaviour {
 	public static bool[] playersAlive = new bool[6];
 	public static int playerTurn;
 	public static int playerLoseTurn;
-	public static int targetPlayer;
+	public static int targetPlayer;	
 	public static int targetMethod;
 	public static int targetAmount;
 	public static int round;
@@ -38,6 +30,8 @@ public class PlayerTurnMenu : MonoBehaviour {
 	public static int mutinyCard3 = 0;
 	public int cardRangeMin = 1;
 	public int cardRangeMax = 27;
+	public int captainCardRangeMin = 1;
+	public int captainCardRangeMax = 28;
 	public Cards cards;
 	private GameObject currentPlayer;
 	private GameObject movePlayerObject;
@@ -113,10 +107,16 @@ public class PlayerTurnMenu : MonoBehaviour {
 		//Comm.joinGroup ("renar", "foobar");
 	}
 	
-	/*void Update()
+	void Update()
 	{
-		Debug.Log ("Player Stats is: " + ps.ToString());
-	}*/
+		Debug.Log ("Players alive are, " 
+		           + playersAlive[0].ToString() 
+		           + ", " + playersAlive[1].ToString() 
+		           + ", " + playersAlive[2].ToString()
+		           + ", " + playersAlive[3].ToString()
+		           + ", " + playersAlive[4].ToString()
+		           + ", " + playersAlive[5].ToString());
+	}
 	
 	private void changePlayer()
 	{
@@ -140,12 +140,50 @@ public class PlayerTurnMenu : MonoBehaviour {
 			playerLoseTurn = 0;
 			changePlayer();
 		}
+		
 		currentPlayer = GameObject.Find("/Pirate_Ship/Players/Player_" + playerTurn);
-		ps = currentPlayer.GetComponent("PlayerStats") as PlayerStats;
-		ps.addPlays(2);
-		AddCardsToHand(0);
-		(Camera.main.GetComponent("FollowPlayer")as FollowPlayer).UpdateCamera(playerTurn);
-		//Debug.Log ("ps = " + ps.ToString());
+
+		int aliveCount = 0;
+		for(int i = 0; i < StartMenu.numberOfPlayers; i++)
+		{
+			if(playersAlive[i] == false)
+			{
+				aliveCount++;
+				//Debug.Log("Number of dead players is: " + aliveCount);
+			}
+		}
+		if(aliveCount == StartMenu.numberOfPlayers)
+		{
+			Debug.Log ("All players are dead");
+			//ends the game
+			PlayerTurnMenu.showOptions = false;//closes the interface
+			PlayerTurnMenu.showCards = false;//closes the card displays
+			PlayerTurnMenu.showChatWindow = false;//closes chat box
+			StashCount.showLoseGame = true;//TODO needs to display everyone died instead of stash ran out...
+			mutinyCard1 = 0; mutinyCard2 = 0; mutinyCard3 = 0;
+			StashCount.stashArray[0] = 1;
+		}
+		else if(aliveCount == StartMenu.numberOfPlayers - 1)
+		{
+			Debug.Log ("Player " + playerTurn +" is the last player standing\nThey get all the stash!");
+			StashCount.stashArray[playerTurn] +=  Mathf.Round(StashCount.stashArray[0]/2);
+			//ends the game
+			PlayerTurnMenu.showOptions = false;//closes the interface
+			PlayerTurnMenu.showCards = false;//closes the card displays
+			PlayerTurnMenu.showChatWindow = false;//closes chat box
+			StashCount.showLoseGame = true;//TODO needs to display everyone died instead of stash ran out...
+			mutinyCard1 = 0; mutinyCard2 = 0; mutinyCard3 = 0;
+			StashCount.stashArray[0] = 1;
+		}
+		else if(currentPlayer == null){changePlayer();}
+		else{
+			ps = currentPlayer.GetComponent("PlayerStats") as PlayerStats;
+			ps.addPlays(2);
+			AddCardsToHand(0);
+			(Camera.main.GetComponent("FollowPlayer")as FollowPlayer).UpdateCamera(playerTurn);
+			//Debug.Log ("ps = " + ps.ToString());
+		}
+
 	}
 	
 	
@@ -227,7 +265,7 @@ public class PlayerTurnMenu : MonoBehaviour {
 	//Though players don't get to choose order...
 	//so captain cards should still only come up one at a time?
 	public void drawCaptainCard(){
-		randomCard = Random.Range(1,28); //1 to 28
+		randomCard = Random.Range(captainCardRangeMin,captainCardRangeMax+1); //1 to 28
 		randomCard = (int) Mathf.Round(randomCard);
 		displayCaptainCard = randomCard;
 		//displayCaptainCard = 6; //test specific cards
@@ -480,7 +518,6 @@ public class PlayerTurnMenu : MonoBehaviour {
 		{
 			movePlayerObject.transform.position = movePlayerObject.transform.position + new Vector3((space-current)*6,0,0);
 		}
-		(Camera.main.GetComponent("FollowPlayer")as FollowPlayer).UpdateCamera(playerTurn);
 		for(int k = 1; k <= 17; k++)
 		{showPathChoice[k] = false;}
 		if(useMethod == true)
@@ -490,9 +527,13 @@ public class PlayerTurnMenu : MonoBehaviour {
 		}
 		if(ps2.getCurrentSpace() == 17)
 		{
-			playersAlive[ps2.getPlayerID()] = false;
+			playersAlive[ps2.getPlayerID()-1] = false;
 			playOb = (GameObject.Find("/Pirate_Ship/Players/Player_" + ps2.getPlayerID()) as GameObject);
 			playOb.SetActive(false);
+		}
+		else
+		{
+			(Camera.main.GetComponent("FollowPlayer")as FollowPlayer).UpdateCamera(playerTurn);
 		}
 	}
 	
@@ -523,68 +564,75 @@ public class PlayerTurnMenu : MonoBehaviour {
 		{
 			tempPlayer.transform.position = tempPlayer.transform.position + new Vector3((space-current)*6,0,0);
 		}
-		(Camera.main.GetComponent("FollowPlayer")as FollowPlayer).UpdateCamera(playerTurn);
+
 		if(tempStats.getCurrentSpace() == 17)
 		{
-			playersAlive[tempStats.getPlayerID()] = false;
+			playersAlive[tempStats.getPlayerID()-1] = false;
 			tempPlayer = (GameObject.Find("/Pirate_Ship/Players/Player_" + tempStats.getPlayerID()) as GameObject);
 			tempPlayer.SetActive(false);
+		}
+		else
+		{
+			(Camera.main.GetComponent("FollowPlayer")as FollowPlayer).UpdateCamera(playerTurn);
 		}
 	}
 	
 	public void moveTowardOverboard(int player,int spaces)
 	{
 		tempPlayer = GameObject.Find("/Pirate_Ship/Players/Player_" + player);
-		tempStats = tempPlayer.GetComponent("PlayerStats") as PlayerStats;
-		int startPlank = 7, current = tempStats.getCurrentSpace();
-		int movement = spaces;
-		bool plank = true; //skip the last if (#3) if moving is complete
-		
-		//1. look from start to startPlank
-		if (current < startPlank) {
-			//Debug.Log("entering #1");
-			if(startPlank - current >= movement){ //player doesn't reach plank
-				current = current + movement;
-				plank = false;
+		if(tempPlayer != null){
+			tempStats = tempPlayer.GetComponent("PlayerStats") as PlayerStats;
+			int startPlank = 7, current = tempStats.getCurrentSpace();
+			int movement = spaces;
+			bool plank = true; //skip the last if (#3) if moving is complete
+			
+			//1. look from start to startPlank
+			if (current < startPlank) {
+				//Debug.Log("entering #1");
+				if(startPlank - current >= movement){ //player doesn't reach plank
+					current = current + movement;
+					plank = false;
+				}
+				else {  //gonna end up farther onto plank
+					movement = movement - (startPlank - current);
+					current = startPlank;
+					//Debug.Log("Current: " + current + "; spaces : " + movement);
+				}
 			}
-			else {  //gonna end up farther onto plank
-				movement = movement - (startPlank - current);
-				current = startPlank;
-				//Debug.Log("Current: " + current + "; spaces : " + movement);
+			//2. look from end to startPlank
+			else if (current > startPlank && current <= 13) {	
+				//Debug.Log("entering #2");
+				if(current - startPlank >= movement){ //player doesn't reach plank
+					current = current - movement;
+					plank = false;
+				}
+				else {  //gonna end up farther onto plank
+					movement = movement - (current - startPlank);
+					current = startPlank;
+				}
 			}
-		}
-		//2. look from end to startPlank
-		else if (current > startPlank && current <= 13) {	
-			//Debug.Log("entering #2");
-			if(current - startPlank >= movement){ //player doesn't reach plank
-				current = current - movement;
-				plank = false;
+			//3. look from startPlank to endPlank
+			if((current == 7 || current > 13) && plank){
+				//Debug.Log("entering #3");
+				if(current == 7 && movement == 1)
+					current = 14;
+				else if(current == 7 && (movement > 1 || movement <= 3)){
+					//Debug.Log("entering else if");
+					current = 14 + (movement - 1);
+				}
+				else
+					current = 17;
 			}
-			else {  //gonna end up farther onto plank
-				movement = movement - (current - startPlank);
-				current = startPlank;
-			}
-		}
-		//3. look from startPlank to endPlank
-		if((current == 7 || current > 13) && plank){
-			//Debug.Log("entering #3");
-			if(current == 7 && movement == 1)
-				current = 14;
-			else if(current == 7 && (movement > 1 || movement <= 3)){
-				//Debug.Log("entering else if");
-				current = 14 + (movement - 1);
-			}
-			else
-				current = 17;
-		}
-		
-		//finally, actually move the player
-		changePlayerLocation (player, current); //at this point, current is actually the new location
-		/*if(tempStats.getCurrentSpace() == 17)
+			
+			//finally, actually move the player
+			changePlayerLocation (player, current); //at this point, current is actually the new location
+			/*if(tempStats.getCurrentSpace() == 17)
 		{
 			playersAlive[tempStats.getPlayerID()] = false;
 			(GameObject.Find("/Pirate_Ship/Players/Player_" + tempStats.getPlayerID()) as GameObject).SetActive(false);
 		}*/
+		}
+
 	}
 	
 	
@@ -606,7 +654,7 @@ public class PlayerTurnMenu : MonoBehaviour {
 			}
 			else if(ps != null && playerTurn > 0)
 			{
-				Debug.Log("current player is " + ps.ToString());
+				//Debug.Log("current player is " + ps.ToString());
 				//Debug.Log ("In player interface");
 
 				GUI.Box(makeRect(1,1,4,4), "Player " + playerTurn, currentPlayerStyle());
@@ -956,7 +1004,7 @@ public class PlayerTurnMenu : MonoBehaviour {
 		
 		if (showChoosePlayer == true)
 		{
-			if(playerTurn == 1)
+			if(playerTurn == 1 && playersAlive[0] != true)
 			{GUI.Box(makeRect(9,10,1,2), "1");}
 			else if (GUI.Button(makeRect(9,10,1,2), "1", player1))
 			{
@@ -965,7 +1013,7 @@ public class PlayerTurnMenu : MonoBehaviour {
 				showChoosePlayer = false;
 			}
 			
-			if(playerTurn == 2)
+			if(playerTurn == 2 && playersAlive[1] != true)
 			{GUI.Box(makeRect(10,10,1,2), "2");}
 			else if (GUI.Button(makeRect(10,10,1,2), "2", player2))
 			{
@@ -976,7 +1024,7 @@ public class PlayerTurnMenu : MonoBehaviour {
 			
 			if(StartMenu.numberOfPlayers > 2)
 			{
-				if(playerTurn == 3)
+				if(playerTurn == 3 && playersAlive[2] != true)
 				{GUI.Box(makeRect(11,10,1,2), "3");}
 				else if (GUI.Button(makeRect(11,10,1,2), "3", player3))
 				{
@@ -992,7 +1040,7 @@ public class PlayerTurnMenu : MonoBehaviour {
 			
 			if(StartMenu.numberOfPlayers > 3)
 			{
-				if(playerTurn == 4)
+				if(playerTurn == 4 && playersAlive[3] != true)
 				{GUI.Box(makeRect(12,10,1,2), "4");}
 				else if (GUI.Button(makeRect(12,10,1,2), "4", player4))
 				{
@@ -1004,7 +1052,7 @@ public class PlayerTurnMenu : MonoBehaviour {
 			
 			if(StartMenu.numberOfPlayers > 4)
 			{
-				if(playerTurn == 5)
+				if(playerTurn == 5 && playersAlive[4] != true)
 				{GUI.Box(makeRect(13,10,1,2), "5");}
 				else if (GUI.Button(makeRect(13,10,1,2), "5", player5))
 				{
@@ -1016,7 +1064,7 @@ public class PlayerTurnMenu : MonoBehaviour {
 			
 			if(StartMenu.numberOfPlayers > 5)
 			{
-				if(playerTurn == 6)
+				if(playerTurn == 6 && playersAlive[5] != true)
 				{GUI.Box(makeRect(14,10,1,2), "6");}
 				else if (GUI.Button(makeRect(14,10,1,2), "6", player6))
 				{
@@ -1559,9 +1607,11 @@ public class PlayerTurnMenu : MonoBehaviour {
 		
 		for (int i = 1; i <= 6; i++) {
 			temp2 = GameObject.Find ("/Pirate_Ship/Players/Player_" + i) as GameObject;
-			temp = temp2.GetComponent ("PlayerStats")as PlayerStats;
-			if(temp.getCurrentSpace() == location)
-				players = players + " P" + i + " ";
+			if(temp2 != null){
+				temp = temp2.GetComponent ("PlayerStats")as PlayerStats;
+				if(temp.getCurrentSpace() == location)
+					players = players + " P" + i + " ";
+			}
 		}
 		return players;
 		

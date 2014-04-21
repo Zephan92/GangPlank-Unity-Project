@@ -14,7 +14,7 @@ public class StashCount : MonoBehaviour {
 	public static float captainStashMultiplier;//Captain Start Multiplier
 	public static float[] stashArray = new float[7];//All stash values 0 = captain: 1-6
 	public static bool mutiny;
-	private bool showLoseGame;//bool for the lose game interface
+	public static bool showLoseGame;//bool for the lose game interface
 
 
 	//Calls only when the script turns on for the first time
