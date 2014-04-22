@@ -24,7 +24,6 @@ namespace Gangplank.Communications {
 				,{"testSerialTimeOut", testSerialTimeOut}
 				,{"testSerialWrongData", testSerialWrongData}
 			};
-			//serialName = comm.name+".serialPort";
 		}
 
 		public void handleMove(string msg){
@@ -39,7 +38,7 @@ namespace Gangplank.Communications {
 				}
 			}
 			else{
-				Console.WriteLine("not a serial command:"+msg);
+				comm.sendChat("not a serial command:"+msg, serialName);
 			}
 		}
 		private void readRFID(string msg){
