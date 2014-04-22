@@ -102,8 +102,9 @@ public class CardObject : MonoBehaviour {
 			break;
 			
 		case 10:
-			PlayerTurnMenu.showChoosePlayer = true;
-			PlayerTurnMenu.targetMethod = 5;
+			//PlayerTurnMenu.showChoosePlayer = true;
+			//PlayerTurnMenu.targetMethod = 5;
+			//TODO breaks the card count
 			//Force a player to lose their next turn
 			break;
 			
@@ -121,7 +122,7 @@ public class CardObject : MonoBehaviour {
 			break;
 			
 		case 13:
-			ptm.ps.setPlays(3);
+			ptm.ps.addPlays(2);
 			ptm.ps.addCards(2);
 			//Draw 2 card and play them immediately.
 			break;
@@ -132,7 +133,7 @@ public class CardObject : MonoBehaviour {
 			break;
 			
 		case 15:
-			ptm.ps.setPlays(4);
+			ptm.ps.addPlays(3);
 			ptm.ps.addCards(3);
 			//draw 3 cards
 			break;
@@ -189,7 +190,7 @@ public class CardObject : MonoBehaviour {
 			//move 1 space
 			//draw 1 card and play immediately
 			ptm.movePlayer(PlayerTurnMenu.playerTurn,1);
-			ptm.ps.setPlays(1);
+			ptm.ps.addPlays(1);
 			ptm.ps.addCards(1);
 			break;
 			

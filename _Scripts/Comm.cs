@@ -18,14 +18,14 @@ public class Comm{
 	}
 
 	public static void addChatListener(UpdateDelegate callback){
-		comm.addChatListener (callback);
+	//	comm.addChatListener (callback);
 	}
 	public static void addNewUserListener (UpdateDelegate callback){
-		comm.addNewUserListener (callback);
+	//	comm.addNewUserListener (callback);
 	}
 
 	public static void addMoveListener(UpdateDelegate callback){
-		comm.addMoveListener (callback);
+	//	comm.addMoveListener (callback);
 	}
 
 	public static void sendChat(string msg){
