@@ -107,7 +107,7 @@ public class PlayerTurnMenu : MonoBehaviour {
 		//Comm.joinGroup ("renar", "foobar");
 	}
 	
-	void Update()
+	/*void Update()
 	{
 		Debug.Log ("Players alive are, " 
 		           + playersAlive[0].ToString() 
@@ -116,7 +116,7 @@ public class PlayerTurnMenu : MonoBehaviour {
 		           + ", " + playersAlive[3].ToString()
 		           + ", " + playersAlive[4].ToString()
 		           + ", " + playersAlive[5].ToString());
-	}
+	}*/
 	
 	private void changePlayer()
 	{
@@ -251,7 +251,7 @@ public class PlayerTurnMenu : MonoBehaviour {
 					cardsArray[i] = randomCard;
 					ps.addCards(-1);
 				}
-				if(cardsArray[i] == 12 && ps.getDrawRopes() == false)
+				if(cardsArray[i] == 7 && ps.getDrawRopes() == false)
 				{
 					cardsArray[i] = 1;
 				}
@@ -1004,7 +1004,7 @@ public class PlayerTurnMenu : MonoBehaviour {
 		
 		if (showChoosePlayer == true)
 		{
-			if(playerTurn == 1 && playersAlive[0] != true)
+			if(playerTurn == 1 || playersAlive[0] != true)
 			{GUI.Box(makeRect(9,10,1,2), "1");}
 			else if (GUI.Button(makeRect(9,10,1,2), "1", player1))
 			{
@@ -1013,7 +1013,7 @@ public class PlayerTurnMenu : MonoBehaviour {
 				showChoosePlayer = false;
 			}
 			
-			if(playerTurn == 2 && playersAlive[1] != true)
+			if(playerTurn == 2 || playersAlive[1] != true)
 			{GUI.Box(makeRect(10,10,1,2), "2");}
 			else if (GUI.Button(makeRect(10,10,1,2), "2", player2))
 			{
@@ -1024,7 +1024,7 @@ public class PlayerTurnMenu : MonoBehaviour {
 			
 			if(StartMenu.numberOfPlayers > 2)
 			{
-				if(playerTurn == 3 && playersAlive[2] != true)
+				if(playerTurn == 3 || playersAlive[2] != true)
 				{GUI.Box(makeRect(11,10,1,2), "3");}
 				else if (GUI.Button(makeRect(11,10,1,2), "3", player3))
 				{
@@ -1040,7 +1040,7 @@ public class PlayerTurnMenu : MonoBehaviour {
 			
 			if(StartMenu.numberOfPlayers > 3)
 			{
-				if(playerTurn == 4 && playersAlive[3] != true)
+				if(playerTurn == 4 || playersAlive[3] != true)
 				{GUI.Box(makeRect(12,10,1,2), "4");}
 				else if (GUI.Button(makeRect(12,10,1,2), "4", player4))
 				{
@@ -1052,7 +1052,7 @@ public class PlayerTurnMenu : MonoBehaviour {
 			
 			if(StartMenu.numberOfPlayers > 4)
 			{
-				if(playerTurn == 5 && playersAlive[4] != true)
+				if(playerTurn == 5 || playersAlive[4] != true)
 				{GUI.Box(makeRect(13,10,1,2), "5");}
 				else if (GUI.Button(makeRect(13,10,1,2), "5", player5))
 				{
@@ -1064,7 +1064,7 @@ public class PlayerTurnMenu : MonoBehaviour {
 			
 			if(StartMenu.numberOfPlayers > 5)
 			{
-				if(playerTurn == 6 && playersAlive[5] != true)
+				if(playerTurn == 6 || playersAlive[5] != true)
 				{GUI.Box(makeRect(14,10,1,2), "6");}
 				else if (GUI.Button(makeRect(14,10,1,2), "6", player6))
 				{

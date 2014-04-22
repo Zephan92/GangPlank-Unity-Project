@@ -31,7 +31,12 @@ public class PlayerStats : MonoBehaviour {
 		if(playerID > StartMenu.numberOfPlayers)
 		{
 			alive = false;
-			gameObject.renderer.enabled = false;
+			Renderer[] renderers = GetComponentsInChildren<Renderer>();
+			
+			foreach (Renderer r in renderers)
+			{
+				r.enabled = false;
+			}
 		}
 		else
 		{
