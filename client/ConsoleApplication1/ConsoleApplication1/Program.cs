@@ -14,7 +14,16 @@ namespace ConsoleApplication1 {
 				comm.addChatListener(str => Console.WriteLine(str));
 				comm.addNewUserListener(str => Console.WriteLine(str+" has joined the group"));
 
-				CommResponse res = comm.connectToMatchServer();
+				CommResponse res;
+				
+				if(getFromUser("connect to serial port? (y/n)", "y", "n", "yes", "no")[0] == 'y'){
+					res = comm.connectSerialPort();
+					if(!res.success){
+						exit(res.message);
+					}
+				}
+
+				res = comm.connectToMatchServer();
 				if(res.success){
 					Console.WriteLine("Successfully connected to server");
 				}

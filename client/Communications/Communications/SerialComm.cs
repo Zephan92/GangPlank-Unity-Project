@@ -164,9 +164,13 @@ namespace SerialComm
             return true;
         }
 
-        private bool openPortDialog()
+        public bool openPortDialog()
         {
             string[] ports = SerialPort.GetPortNames();
+				if(ports.Length == 0){
+					Console.WriteLine("No available ports");
+					return true;
+				}
             Console.WriteLine("Avilable ports:");
 
             int i = 0;
@@ -197,8 +201,7 @@ namespace SerialComm
                 return true;
             }
             Console.WriteLine("Opening port...");
-            startSerial(ports[portnum]);
-            return false;
+            return startSerial(ports[portnum]);
         }
 
         private bool getCommand(string mes)
