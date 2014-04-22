@@ -2,16 +2,32 @@
 using System.Linq;
 using System.Collections.Generic;
 
+using SerialComm;
+
 namespace Gangplank.Communications {
     public class CommManager {
 		public static readonly CommResponse SUCCESS = new CommResponse(true, "ok", "success");
 
 		public CommResponse lastFailure{get;private set;}
-		private String name{get;set;}
+		internal String name{get;set;}
 
 		CommClient client;
+		serialComm serial;
 		public CommManager() {
 			client = new CommClient();
+		}
+
+		public CommResponse connectSerialPort(){
+			serial = new serialComm();
+			/*
+			if(serial.openPortDialog()){
+				serial = null;
+				return new CommResponse(false, "err", "failed to open serial port");
+			}
+			*/
+			MoveSerialHandler moveToSerial = new MoveSerialHandler(serial, this);
+			addMoveListener(moveToSerial.handleMove);
+			return SUCCESS;
 		}
 
 		public CommResponse connectToMatchServer(){
@@ -81,7 +97,14 @@ namespace Gangplank.Communications {
 		}
 
 		public CommResponse sendChat(string msg){
-			return send(composeMessage("group","chat", DateTime.Now+" "+name+": "+msg));
+			if(msg[0] == CommConstants.unitSplit){
+				return sendMove(msg.Substring(1)); //hack to demonstrate serial commands over network
+			}
+			return sendChat(msg, name);
+		}
+
+		internal CommResponse sendChat(string msg, string username){
+			return send(composeMessage("group","chat", DateTime.Now.ToString("HH:mm:ss")+" "+username+": "+msg));
 		}
 
 		public CommResponse sendMove(string msg){
