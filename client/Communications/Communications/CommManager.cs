@@ -19,12 +19,10 @@ namespace Gangplank.Communications {
 
 		public CommResponse connectSerialPort(){
 			serial = new serialComm();
-			/*
 			if(serial.openPortDialog()){
 				serial = null;
 				return new CommResponse(false, "err", "failed to open serial port");
 			}
-			 * */
 			MoveSerialHandler moveToSerial = new MoveSerialHandler(serial, this);
 			addMoveListener(moveToSerial.handleMove);
 			moveToSerial.loadCardData("RFID_records.txt");

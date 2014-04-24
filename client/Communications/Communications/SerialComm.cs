@@ -522,7 +522,6 @@ namespace SerialComm
 
         public string requestRFID(byte player)                                 //requests an RFID tag from the device. returns a hex formatted string.
         {
-		  return "A2FE3F7";
             byte[] tx = new byte[2];
             tx[0] = 0x20;
             tx[1] = player;
