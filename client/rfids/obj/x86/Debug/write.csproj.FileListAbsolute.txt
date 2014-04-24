@@ -1,0 +1,5 @@
+C:\Users\Renar\Desktop\New folder (2)\obj\x86\Debug\write.csprojResolveAssemblyReference.cache
+C:\Users\Renar\Desktop\New folder (2)\bin\Debug\ConsoleApplication.exe
+C:\Users\Renar\Desktop\New folder (2)\bin\Debug\ConsoleApplication.pdb
+C:\Users\Renar\Desktop\New folder (2)\obj\x86\Debug\ConsoleApplication.exe
+C:\Users\Renar\Desktop\New folder (2)\obj\x86\Debug\ConsoleApplication.pdb

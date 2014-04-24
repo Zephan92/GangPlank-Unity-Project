@@ -13,6 +13,7 @@ namespace ConsoleApplication1 {
             CommManager comm = new CommManager();
 				comm.addChatListener(str => Console.WriteLine(str));
 				comm.addNewUserListener(str => Console.WriteLine(str+" has joined the group"));
+				AppDomain.CurrentDomain.ProcessExit += new EventHandler((obj, evt)=> comm.closeSerialPort());
 
 				CommResponse res;
 				

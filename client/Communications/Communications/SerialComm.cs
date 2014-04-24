@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using System.IO;
 using System.IO.Ports;
 using System.Diagnostics;
+using System.Threading;
 
 namespace SerialComm
 {
@@ -17,13 +20,13 @@ namespace SerialComm
 
         public serialComm()
         {
-            rx = new byte[3];
+            rx = new byte[4];
             did_rx = false;
             //retry = 0;
             bytes_recieved = 0;
         }
 
-        public void start()
+        public void start()             //should only be used to if program is run in a console. for headless operation call startSerial directly.
         {
             Console.WriteLine("Welcome to Serial Comm!");
 
@@ -137,7 +140,7 @@ namespace SerialComm
                     Console.WriteLine("Updating player position...");
                     try
                     {
-                        updatePlayer((byte)player, (byte)pos);
+                        requestPlayerUpdate((byte)player, (byte)pos);
                     }
                     catch (TimeoutException)
                     {
@@ -156,8 +159,67 @@ namespace SerialComm
                     }
 
                     return false;
+                case "request card":
+                    Console.WriteLine("Which player is playing? [0-5]");
+                    string player_string_3 = Console.ReadLine();
+                    byte player_3 = Convert.ToByte(player_string_3);
+                    try
+                    {
+                        Console.Write("Card id: ");
+                        Console.WriteLine(requestRFID(player_3));
+                    }
+                    catch (TimeoutException)
+                    {
+                        Console.WriteLine("Operation timed out!");
+                        return true;
+                    }
+                    return false;
+                case "request choice":
+                    Console.WriteLine("Which player is chosing? [0-5]");
+                    string player_string_2 = Console.ReadLine();
+                    byte player_2 = Convert.ToByte(player_string_2);
+                    try
+                    {
+                        Console.Write("Choice: ");
+                        Console.WriteLine(requestPlayerChoice(player_2));
+                    }
+                    catch (InvalidDataException)
+                    {
+                        Console.WriteLine("Invalid data recieved!");
+                        return true;
+                    }
+                    catch (TimeoutException)
+                    {
+                        Console.WriteLine("Operation timed out!");
+                        return true;
+                    }
+                    return false;
+                case "request move":
+                    Console.WriteLine("Which player is moving? [0-5]");
+                    string player_string_1 = Console.ReadLine();
+                    byte player_1 = Convert.ToByte(player_string_1);
+                    Console.WriteLine("How many spaces can they move?");
+                    string spaces_string = Console.ReadLine();
+                    byte spaces = Convert.ToByte(spaces_string);
+
+                    try
+                    {
+                        Console.Write("Space: ");
+                        Console.WriteLine(requestPlayerMove(player_1, spaces));
+                    }
+                    catch (InvalidDataException)
+                    {
+                        Console.WriteLine("Invalid data recieved!");
+                        return true;
+                    }
+                    catch (TimeoutException)
+                    {
+                        Console.WriteLine("Operation timed out!");
+                        return true;
+                    }
+                    return false;
                 default:
-                    Console.WriteLine("Not a valid command");
+                    Console.WriteLine("Not a valid command!");
                     return false;
             }
 
@@ -167,16 +229,18 @@ namespace SerialComm
         public bool openPortDialog()
         {
             string[] ports = SerialPort.GetPortNames();
-				if(ports.Length == 0){
+				if (ports.Length == 0) {
 					Console.WriteLine("No available ports");
 					return true;
 				}
             Console.WriteLine("Avilable ports:");
 
+
             int i = 0;
             foreach (string port in ports)
             {
                 Console.Write(i + " : ");
+                i++;
                 Console.WriteLine(port);
             }
 
@@ -201,7 +265,8 @@ namespace SerialComm
                 return true;
             }
             Console.WriteLine("Opening port...");
-            return startSerial(ports[portnum]);
+            startSerial(ports[portnum]);
+            return false;
         }
 
         private bool getCommand(string mes)
@@ -217,9 +282,9 @@ namespace SerialComm
             return false;
         }
 
-        private bool startSerial(string port, int baud = 9600, 
+        public bool startSerial(string port, int baud = 9600, 
             Parity parity = Parity.None, 
-            int dataBits = 8, StopBits stopBits = StopBits.One)
+            int dataBits = 8, StopBits stopBits = StopBits.One)     //opens serial port.
         {
             if (comPort != null && comPort.IsOpen)
             {
@@ -231,7 +296,18 @@ namespace SerialComm
 
             comPort.DataReceived += new SerialDataReceivedEventHandler(DataRecievedHandler);
 
-            comPort.Open();
+            try
+            {
+                comPort.Open();
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return true;
+            }
+            catch (IOException)
+            {
+                return true;
+            }
             //comPort.ReadTimeout(4000);
 
             if (comPort.IsOpen)
@@ -243,7 +319,7 @@ namespace SerialComm
             return true;
         }
 
-        private bool closeSerial()
+        public bool closeSerial()                                   //closes serial port. MAKE SURE THIS IS RUN BEFORE EXITING THE PROGRAM!!!!!!!
         {
             if (comPort != null)    //check to see if comPort object was initialized. Otherwise, exiting the program will throw an exception.
             {
@@ -265,21 +341,15 @@ namespace SerialComm
             byte[] buffer = new byte[n];
             
             sp.Read(buffer, 0, n);
-            //Console.WriteLine("Data recieved");
-            /*
-            Console.WriteLine(":::::::::Buffer Content::::::::");
-            for (int i = 0; i < buffer.Length; i++)
-            {
-                Console.WriteLine(buffer[i]);
-            }
-            //*/
-            getFromBuffer(buffer);
+
+            getFromBuffer(ref buffer);                  //copies to rx array
+
             bytes_recieved += n;                        //indicate how many bytes have been read.
             did_rx = true;
             //Console.WriteLine("Data recieved");
         }
 
-        private bool sendSerial(Byte[] tx)
+        private bool sendSerial(ref Byte[] tx)
         {
             if (comPort.IsOpen)
             {
@@ -293,14 +363,15 @@ namespace SerialComm
             return false;
         }
 
-        private bool readSerial(int n)                  //n represents how many bytes are expected.
+        private bool readSerial(int n)                              //n represents how many bytes are expected.
         {
             TimeSpan to = TimeSpan.FromMinutes(1);      //timer used to set timeout in case device is disconnected or nothing is returned.
             Stopwatch toClock = Stopwatch.StartNew();   //because the protocol is call-response, something should always be returned.
 
-            bool done = true;
+            bytes_recieved = 0;                         //ensure that recieved counter is 0 (maybe in case a different operation failed?)
+            bool done = true;                           //used to exit the while loop
 
-            while (toClock.Elapsed < to && done)
+            while (toClock.Elapsed < to && done)        //exits once the timeout has elapsed or all the data is recieved.
             {
                 if (did_rx)
                 {
@@ -311,22 +382,30 @@ namespace SerialComm
                         bytes_recieved = 0;
                         done = false;
                     }
+                    else if (bytes_recieved < n)
+                    {
+                        did_rx = false;
+                    }
+                    else if (bytes_recieved > n)
+                    {
+                        return true;
+                    }
                 }
             }
             toClock.Stop();
             if (toClock.Elapsed >= to) throw new TimeoutException();    //throw timeout exception if timeout occurs.
             else return false;
         }
-        private void getFromBuffer(byte[] buffer)
+        private void getFromBuffer(ref byte[] buffer)
         {
-            Array.Copy(buffer, 0, rx, 0, buffer.Length);
+            Array.Copy(buffer, 0, rx, bytes_recieved, buffer.Length);
         }
 
-        public bool testSerial()            //test whether the serial connection works. should succeed.
+        public bool testSerial()                                    //test whether the serial connection works. should succeed.
         {
             byte[] tx = new byte[1];    //sending a 0x01 is a test signal. should recieve 0x01 (ack) back. 
             tx[0] = 1;
-            sendSerial(tx);
+            sendSerial(ref tx);
 
             try
             {
@@ -346,16 +425,16 @@ namespace SerialComm
                 //return true;
             }
 
-            Array.Clear(rx, 0, 3);
+            Array.Clear(rx, 0, 3);          //clear recieve array for next operation.
             Console.WriteLine("Correct data recieved!");
             return false;
         }
 
-        public bool testSerialTimeOut()     //test whether the timeout works. device will not send any data back.
+        public bool testSerialTimeOut()                             //test whether the timeout works. device will not send any data back. Should throw timeout exception.
         {
             byte[] tx = new byte[1];    //sending a 0x01 is a test signal. should recieve 0x01 (ack) back. 
             tx[0] = 2;
-            sendSerial(tx);
+            sendSerial(ref tx);
 
             try
             {
@@ -379,11 +458,11 @@ namespace SerialComm
             return false;
         }
 
-        public bool testSerialWrongData()   //tests whether program can interpret incorrect data. should fail.
+        public bool testSerialWrongData()                           //tests whether program can interpret incorrect data. should fail.
         {
             byte[] tx = new byte[1];    //sending a 0x01 is a test signal. should recieve 0x01 (ack) back. 
             tx[0] = 3;
-            sendSerial(tx);
+            sendSerial(ref tx);
 
             try
             {
@@ -407,7 +486,7 @@ namespace SerialComm
             return false;
         }
 
-        public bool updatePlayer(byte player, byte pos)     //updates the player position. input the player number and where his location is.
+        public bool requestPlayerUpdate(byte player, byte pos)      //updates the player position. input the player number and where his location is.
         {
             if (pos > 0x0F || player > 6) 
             {
@@ -418,7 +497,7 @@ namespace SerialComm
             tx[0] = 0x10;
             tx[1] = player;
             tx[2] = pos;
-            sendSerial(tx);                                  //transmit command byte.
+            sendSerial(ref tx);                                  //transmit command byte.
 
             try
             {
@@ -434,32 +513,86 @@ namespace SerialComm
             if (rx[0] != 1 || rx[1] != player || rx[2] != pos)  //validate correct data was recieved.
             {
                 throw new InvalidDataException();
-                /*
-                Console.WriteLine("Recieved incorrect data!");
-                foreach (byte b in rx)
-                {
-                    Console.WriteLine(b);
-                }
-                return true;
-                */
             }
 
-            Console.WriteLine("Success!");
+            //Console.WriteLine("Success!");
             Array.Clear(rx, 0, 3);                          //clear array after it has been used.
             return false;
         }
 
-        public string readRFID()                            //requests an RFID tag from the device.
+        public string requestRFID(byte player)                                 //requests an RFID tag from the device. returns a hex formatted string.
         {
-            byte[] tx = new byte[1];
-            tx[0] = 0x11;
+		  return "A2FE3F7";
+            byte[] tx = new byte[2];
+            tx[0] = 0x20;
+            tx[1] = player;
 
-            sendSerial(tx);
+            sendSerial(ref tx);
 
+            try
+            {
+                readSerial(4);
+            }
+            catch (TimeoutException)
+            {
+                throw new TimeoutException();
+            }
 
+            string id = BitConverter.ToString(rx);
+            Array.Clear(rx, 0, 4);
+            return id.Replace("-", "");
+        }
 
+        public int requestPlayerChoice(byte player)                            //request player to make a choice. returns a value 1 - 6.
+        {
+            byte[] tx = new byte[2];
+            tx[0] = 0x30;
+            tx[1] = player;
+            sendSerial(ref tx);
 
-            return "butts";
+            try
+            {
+                readSerial(2);
+            }
+            catch (TimeoutException)
+            {
+                throw new TimeoutException();
+            }
+
+            if (rx[0] != 1 || rx[1] > 6 || rx[1]==0)
+            {
+                throw new InvalidDataException();
+            }
+
+            int c = rx[1];
+            Array.Clear(rx, 0, 2);                          //clear recieve array for next operation.
+            return c;
+        }
+
+        public int requestPlayerMove(byte player, byte spaces)                   //request player move. input how many spaces they can move. returns they're position.
+        {
+            byte[] tx = new byte[3];
+            tx[0] = 0x40;
+            tx[1] = player;
+            tx[2] = spaces;
+            sendSerial(ref tx);
+
+            try
+            {
+                readSerial(2);
+            }
+            catch (TimeoutException)
+            {
+                throw new TimeoutException();
+            }
+
+            if (rx[0]!=1 || rx[1]>16) {
+                throw new InvalidDataException();
+            }
+
+            int c = rx[1];
+            Array.Clear(rx, 0, 2);
+            return c;
         }
     }
 }

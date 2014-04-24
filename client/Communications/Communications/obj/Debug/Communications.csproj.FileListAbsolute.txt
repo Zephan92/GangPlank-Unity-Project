@@ -1,5 +1,5 @@
-C:\Users\Renar\SkyDrive\school\ipro361\ipro497-361\client\Communications\Communications\obj\Debug\Communications.csprojResolveAssemblyReference.cache
 C:\Users\Renar\SkyDrive\school\ipro361\ipro497-361\client\Communications\Communications\bin\Debug\Communications.dll
 C:\Users\Renar\SkyDrive\school\ipro361\ipro497-361\client\Communications\Communications\bin\Debug\Communications.pdb
 C:\Users\Renar\SkyDrive\school\ipro361\ipro497-361\client\Communications\Communications\obj\Debug\Communications.dll
 C:\Users\Renar\SkyDrive\school\ipro361\ipro497-361\client\Communications\Communications\obj\Debug\Communications.pdb
+C:\Users\Renar\SkyDrive\school\ipro361\ipro497-361\client\Communications\Communications\obj\Debug\Communications.csprojResolveAssemblyReference.cache
