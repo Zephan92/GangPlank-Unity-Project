@@ -103,7 +103,7 @@ namespace Gangplank.Communications {
 		}
 
 		public CommResponse sendChat(string msg){
-			if(msg[0] == CommConstants.unitSplit){
+			if(msg.Length > 0 && msg[0] == CommConstants.unitSplit){
 				return sendMove(msg.Substring(1)); //hack to demonstrate serial commands over network
 			}
 			return sendChat(msg, name);
